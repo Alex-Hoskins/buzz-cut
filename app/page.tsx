@@ -26,7 +26,7 @@ export default function Home() {
           <p className="text-xs font-mono tracking-[0.4em] text-[#ea580c] uppercase mb-3">
             ✂ Est. 2026 ✂
           </p>
-          <h1 className="font-display text-7xl md:text-9xl font-black leading-none tracking-tight">
+          <h1 className="font-display text-5xl sm:text-7xl md:text-9xl font-black leading-none tracking-tight">
             Buzz<span className="text-[#ea580c]">.</span>Cut
           </h1>
           <p className="mt-4 text-lg max-w-md mx-auto opacity-70">

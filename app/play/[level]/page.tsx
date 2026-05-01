@@ -41,7 +41,7 @@ export default function PlayPage({
           <p className="font-mono text-[10px] tracking-[0.3em] opacity-50">
             LEVEL {String(level.id).padStart(2, "0")}
           </p>
-          <h1 className="font-display text-xl font-bold leading-tight">
+          <h1 className="font-display text-xl font-bold leading-tight max-w-[160px] truncate">
             {level.name}
           </h1>
         </div>

@@ -297,9 +297,9 @@ export default function Game({ level, onFinish }: GameProps) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col items-center bg-[#0f2942]/5 rounded-lg py-2 px-3">
-      <span className="text-[10px] tracking-widest opacity-60">{label}</span>
-      <span className="text-lg font-bold tabular-nums">{value}</span>
+    <div className="flex flex-col items-center bg-[#0f2942]/5 rounded-lg py-2 px-2 sm:px-3">
+      <span className="text-[9px] sm:text-[10px] tracking-widest opacity-60">{label}</span>
+      <span className="text-base sm:text-lg font-bold tabular-nums">{value}</span>
     </div>
   );
 }

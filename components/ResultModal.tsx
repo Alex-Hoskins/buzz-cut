@@ -14,7 +14,7 @@ export default function ResultModal({ level, result, onRetry }: Props) {
   const next = LEVELS.find((l) => l.id === level.id + 1);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0f2942]/70 backdrop-blur-sm p-4 animate-fadeIn">
-      <div className="bg-[#fef3e7] rounded-3xl p-8 max-w-md w-full shadow-2xl border-4 border-[#0f2942] text-[#0f2942]">
+      <div className="bg-[#fef3e7] rounded-3xl p-5 sm:p-8 max-w-md w-full shadow-2xl border-4 border-[#0f2942] text-[#0f2942]">
         <p className="text-xs uppercase tracking-[0.3em] opacity-60 font-mono text-center">
           Cut Complete
         </p>
