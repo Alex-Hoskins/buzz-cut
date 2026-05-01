@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --coral: #ea580c;
+  --navy: #0f2942;
+  --cream: #fef3e7;
+}
+
+@keyframes pop {
+  0% { transform: scale(0); }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+.animate-pop  { animation: pop 0.4s ease-out backwards; }
+.animate-pop:nth-child(1) { animation-delay: 0.1s; }
+.animate-pop:nth-child(2) { animation-delay: 0.25s; }
+.animate-pop:nth-child(3) { animation-delay: 0.4s; }
+.animate-fadeIn { animation: fadeIn 0.25s ease-out; }
+.animate-float  { animation: float 3s ease-in-out infinite; }
+
+/* Stripey barbershop pole texture */
+.barber-stripes {
+  background-image: repeating-linear-gradient(
+    45deg,
+    #ea580c 0,
+    #ea580c 12px,
+    #fef3e7 12px,
+    #fef3e7 24px,
+    #0f2942 24px,
+    #0f2942 36px,
+    #fef3e7 36px,
+    #fef3e7 48px
+  );
+}
