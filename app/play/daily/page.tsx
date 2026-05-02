@@ -7,10 +7,12 @@ import DailyResultModal from "@/components/DailyResultModal";
 import type { Level } from "@/lib/levels";
 import { generateDaily, getTodayString, type DailyConfig } from "@/lib/daily";
 import { loadDailyResult, saveDailyResult, type ScoreRecord } from "@/lib/storage";
+import ShareButton from "@/components/ShareButton";
+import { buildShareText, type PassQuality } from "@/lib/share";
 // Leaderboard import preserved for future re-enabling:
 // import { getHandle } from "@/lib/player";
 
-type Result = { passes: number; timeMs: number; stars: 1 | 2 | 3 };
+type Result = { passes: number; timeMs: number; stars: 1 | 2 | 3; passQualities: PassQuality[] };
 type PageState = "loading" | "playing" | "finished" | "already-played";
 
 export default function DailyPage() {
@@ -27,7 +29,7 @@ export default function DailyPage() {
 
     const existing = loadDailyResult(today);
     if (existing) {
-      setResult(existing);
+      setResult({ ...existing, passQualities: existing.passQualities ?? [] });
       setPageState("already-played");
     } else {
       setPageState("playing");
@@ -106,6 +108,15 @@ function AlreadyPlayedScreen({ config, result }: { config: DailyConfig; result: 
     ? `${config.holiday.emoji} ${config.holiday.name}`
     : "Today's Cut";
 
+  const shareText = buildShareText({
+    title,
+    dateString: config.dateString,
+    passes: result.passes,
+    par: config.par,
+    stars: result.stars,
+    passQualities: result.passQualities ?? [],
+  });
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#fef3e7]">
       <div className="absolute top-0 left-0 right-0 h-2 barber-stripes" />
@@ -146,9 +157,10 @@ function AlreadyPlayedScreen({ config, result }: { config: DailyConfig; result: 
 
         <p className="text-xs font-mono text-center opacity-50 mb-4">Come back tomorrow for a new cut ✂</p>
         <div className="flex flex-col gap-2">
+          <ShareButton text={shareText} />
           <Link
             href="/"
-            className="w-full py-3 rounded-lg bg-[#ea580c] text-white font-mono uppercase tracking-widest text-sm text-center hover:bg-[#c2410c] transition-colors"
+            className="w-full py-3 rounded-lg border-2 border-[#0f2942] text-[#0f2942] font-mono uppercase tracking-widest text-sm text-center hover:bg-[#0f2942] hover:text-[#fef3e7] transition-colors"
           >
             Back to Shop ←
           </Link>

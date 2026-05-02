@@ -5,6 +5,7 @@ import type { Level } from "@/lib/levels";
 import { calcStars } from "@/lib/levels";
 import { saveScore } from "@/lib/storage";
 import { composeHead } from "@/lib/head-system";
+import { type PassQuality, CLEAN_THRESHOLD } from "@/lib/share";
 
 const CANVAS_W = 700;
 const CANVAS_H = 520;
@@ -23,7 +24,7 @@ type ClipperState = "swinging" | "dropping" | "retracting";
 
 interface GameProps {
   level: Level;
-  onFinish: (result: { passes: number; timeMs: number; stars: 1 | 2 | 3 }) => void;
+  onFinish: (result: { passes: number; timeMs: number; stars: 1 | 2 | 3; passQualities: PassQuality[] }) => void;
 }
 
 export default function Game({ level, onFinish }: GameProps) {
@@ -45,6 +46,8 @@ export default function Game({ level, onFinish }: GameProps) {
     totalHairPixels: 0,
     finished: false,
     lastSampleAt: 0,
+    coverageBeforeDrop: 0,
+    passQualities: [] as PassQuality[],
   });
 
   const [coverage, setCoverage] = useState(0);
@@ -55,6 +58,7 @@ export default function Game({ level, onFinish }: GameProps) {
   const dropClippers = useCallback(() => {
     const s = stateRef.current.clipper;
     if (s.mode === "swinging") {
+      stateRef.current.coverageBeforeDrop = stateRef.current.coverage;
       s.mode = "dropping";
       stateRef.current.passes += 1;
       setPasses(stateRef.current.passes);
@@ -123,6 +127,8 @@ export default function Game({ level, onFinish }: GameProps) {
     stateRef.current.startTime = performance.now();
     stateRef.current.finished = false;
     stateRef.current.lastSampleAt = 0;
+    stateRef.current.coverageBeforeDrop = 0;
+    stateRef.current.passQualities = [];
     setCoverage(0);
     setPasses(0);
     setElapsed(0);
@@ -163,6 +169,8 @@ export default function Game({ level, onFinish }: GameProps) {
         if (c.y <= SWING_Y) {
           c.y = SWING_Y;
           c.mode = "swinging";
+          const gained = st.coverage - st.coverageBeforeDrop;
+          st.passQualities.push(gained >= CLEAN_THRESHOLD ? "clean" : "wasted");
         }
       }
 
@@ -185,6 +193,7 @@ export default function Game({ level, onFinish }: GameProps) {
             passes: st.passes,
             timeMs: Math.round(now - st.startTime),
             stars,
+            passQualities: [...st.passQualities],
           };
           saveScore(level.id, result);
           // Wait for the current frame to paint before showing the modal.

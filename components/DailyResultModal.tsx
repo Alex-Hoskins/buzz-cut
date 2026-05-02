@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import type { DailyConfig } from "@/lib/daily";
+import ShareButton from "./ShareButton";
+import { buildShareText, type PassQuality } from "@/lib/share";
 // Leaderboard imports preserved for future re-enabling:
 // import { useState, useEffect, useCallback } from "react";
 // import { getPlayerId, getHandle, setHandle, hasHandle } from "@/lib/player";
@@ -9,13 +11,22 @@ import type { DailyConfig } from "@/lib/daily";
 
 interface Props {
   config: DailyConfig;
-  result: { passes: number; timeMs: number; stars: 1 | 2 | 3 };
+  result: { passes: number; timeMs: number; stars: 1 | 2 | 3; passQualities: PassQuality[] };
 }
 
 export default function DailyResultModal({ config, result }: Props) {
   const title = config.holiday
     ? `${config.holiday.emoji} ${config.holiday.name}`
     : "Today's Cut";
+
+  const shareText = buildShareText({
+    title,
+    dateString: config.dateString,
+    passes: result.passes,
+    par: config.par,
+    stars: result.stars,
+    passQualities: result.passQualities,
+  });
 
   return (
     <>
@@ -66,9 +77,10 @@ export default function DailyResultModal({ config, result }: Props) {
 
           <div className="flex flex-col gap-2">
             <p className="text-center text-xs font-mono opacity-50">Come back tomorrow for a new cut ✂</p>
+            <ShareButton text={shareText} />
             <Link
               href="/"
-              className="w-full py-3 rounded-lg bg-[#ea580c] text-white font-mono uppercase tracking-widest text-sm text-center hover:bg-[#c2410c] transition-colors"
+              className="w-full py-3 rounded-lg border-2 border-[#0f2942] text-[#0f2942] font-mono uppercase tracking-widest text-sm text-center hover:bg-[#0f2942] hover:text-[#fef3e7] transition-colors"
             >
               Back to Shop ←
             </Link>

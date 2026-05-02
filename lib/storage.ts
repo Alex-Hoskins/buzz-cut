@@ -2,10 +2,13 @@
 
 const KEY = "buzzcut.scores.v1";
 
+import type { PassQuality } from "./share";
+
 export interface ScoreRecord {
   stars: 1 | 2 | 3;
   passes: number;
   timeMs: number;
+  passQualities?: PassQuality[];
 }
 
 export type Scores = Record<number, ScoreRecord>;

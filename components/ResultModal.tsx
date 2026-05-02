@@ -4,13 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Level } from "@/lib/levels";
 import { LEVELS } from "@/lib/levels";
+import ShareButton from "./ShareButton";
+import { buildShareText, type PassQuality } from "@/lib/share";
 // Leaderboard imports preserved for future re-enabling:
 // import { getPlayerId, getHandle, setHandle, hasHandle } from "@/lib/player";
 // import HandlePicker from "./HandlePicker";
 
 interface Props {
   level: Level;
-  result: { passes: number; timeMs: number; stars: 1 | 2 | 3 };
+  result: { passes: number; timeMs: number; stars: 1 | 2 | 3; passQualities: PassQuality[] };
   onRetry: () => void;
 }
 
@@ -18,9 +20,15 @@ export default function ResultModal({ level, result, onRetry }: Props) {
   const next = LEVELS.find((l) => l.id === level.id + 1 && !l.hidden);
 
   // Leaderboard submission disabled — see commit message.
-  // Re-enable by removing the early return below and uncommenting the
-  // submitAndFetch + useEffect blocks, HandlePicker, and leaderboard JSX.
   const [_submissionDisabled] = useState(true); // placeholder to avoid empty-component lint
+
+  const shareText = buildShareText({
+    title: level.name,
+    passes: result.passes,
+    par: level.par,
+    stars: result.stars,
+    passQualities: result.passQualities,
+  });
 
   return (
     <>
@@ -82,18 +90,19 @@ export default function ResultModal({ level, result, onRetry }: Props) {
             {next ? (
               <Link
                 href={`/play/${next.id}`}
-                className="w-full py-3 rounded-lg bg-[#ea580c] text-white font-mono uppercase tracking-widest text-sm text-center hover:bg-[#c2410c] transition-colors"
+                className="w-full py-3 rounded-lg bg-[#0f2942] text-white font-mono uppercase tracking-widest text-sm text-center hover:bg-[#1f3a5c] transition-colors"
               >
                 Next: {next.name} →
               </Link>
             ) : (
               <Link
                 href="/"
-                className="w-full py-3 rounded-lg bg-[#ea580c] text-white font-mono uppercase tracking-widest text-sm text-center hover:bg-[#c2410c] transition-colors"
+                className="w-full py-3 rounded-lg bg-[#0f2942] text-white font-mono uppercase tracking-widest text-sm text-center hover:bg-[#1f3a5c] transition-colors"
               >
                 All Done — Back to Shop
               </Link>
             )}
+            <ShareButton text={shareText} />
             <Link
               href="/"
               className="w-full py-2 text-xs font-mono uppercase tracking-widest text-[#0f2942]/60 hover:text-[#0f2942] text-center transition-colors"
