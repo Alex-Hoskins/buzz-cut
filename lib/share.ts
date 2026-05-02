@@ -1,6 +1,6 @@
 export type PassQuality = "clean" | "partial" | "wasted";
 
-export const CLEAN_HAIR_RATIO = 0.75; // >= 75% of stripe path over hair = clean
+export const CLEAN_HAIR_RATIO = 0.5; // >= 50% of stripe path over hair = clean
 
 const QUALITY_EMOJI: Record<PassQuality, string> = {
   clean:   "🟧",
