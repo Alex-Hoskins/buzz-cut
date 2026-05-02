@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react
 import type { Level } from "@/lib/levels";
 import { calcStars } from "@/lib/levels";
 import { saveScore } from "@/lib/storage";
-import { buildGeometry } from "@/lib/geometry";
+import { composeHead } from "@/lib/head-system";
 
 const CANVAS_W = 700;
 const CANVAS_H = 520;
@@ -99,12 +99,12 @@ export default function Game({ level, onFinish }: GameProps) {
     maskCanvasRef.current = maskCanvas;
     const mctx = maskCanvas.getContext("2d", { willReadFrequently: true })!;
 
-    const geom = buildGeometry(level.shape);
+    const geom = composeHead(level.headConfig);
 
     // Paint the hair onto the mask, intersected with the head shape (so hair never spills off the skin).
     mctx.save();
     mctx.clip(geom.headPath);
-    mctx.fillStyle = level.hairColor;
+    mctx.fillStyle = level.headConfig.hairColor;
     mctx.fill(geom.hairPath);
     mctx.restore();
 

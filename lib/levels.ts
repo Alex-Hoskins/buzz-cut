@@ -1,16 +1,15 @@
 // Level definitions for Buzz Cut.
-// Each level describes the head/hair area and the clipper behavior.
+// Each level describes the head/hair configuration and clipper behaviour.
 
-export type HeadShape = "round" | "oval" | "mohawk" | "tall" | "beard";
+import type { HeadConfig } from "./head-system";
 
 export interface Level {
   id: number;
   name: string;
   subtitle: string;
-  shape: HeadShape;
+  headConfig: HeadConfig;
   swingSpeed: number; // pixels per second at max swing
   par: number;        // target number of passes for 3 stars
-  hairColor: string;
 }
 
 export const LEVELS: Level[] = [
@@ -18,46 +17,41 @@ export const LEVELS: Level[] = [
     id: 1,
     name: "The First Customer",
     subtitle: "Easy does it. Get a feel for the clippers.",
-    shape: "round",
+    headConfig: { skull: "round", hairTop: "full-top", hairSides: "sideburns", hairBeard: "none", hairColor: "#3b2a1e" },
     swingSpeed: 180,
     par: 6,
-    hairColor: "#3b2a1e",
   },
   {
     id: 2,
     name: "The Long Hair",
     subtitle: "Taller dome. Same rules.",
-    shape: "tall",
+    headConfig: { skull: "tall", hairTop: "fluffy", hairSides: "mutton-chops", hairBeard: "none", hairColor: "#5b3a1a" },
     swingSpeed: 220,
     par: 7,
-    hairColor: "#5b3a1a",
   },
   {
     id: 3,
     name: "The Mohawk",
     subtitle: "Only the strip. Don't waste passes on bare scalp.",
-    shape: "mohawk",
+    headConfig: { skull: "round", hairTop: "mohawk", hairSides: "none", hairBeard: "none", hairColor: "#1a1a1a" },
     swingSpeed: 240,
     par: 4,
-    hairColor: "#1a1a1a",
   },
   {
     id: 4,
     name: "The Speed Demon",
     subtitle: "Clippers are wired. Time your drops.",
-    shape: "oval",
+    headConfig: { skull: "oval", hairTop: "full-top", hairSides: "sideburns", hairBeard: "none", hairColor: "#6b4226" },
     swingSpeed: 360,
     par: 6,
-    hairColor: "#6b4226",
   },
   {
     id: 5,
     name: "The Full Service",
     subtitle: "Head AND beard. The works.",
-    shape: "beard",
+    headConfig: { skull: "round", hairTop: "full-top", hairSides: "sideburns", hairBeard: "full", hairColor: "#2a1810" },
     swingSpeed: 280,
     par: 8,
-    hairColor: "#2a1810",
   },
 ];
 
