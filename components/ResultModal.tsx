@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import type { Level } from "@/lib/levels";
 import { LEVELS } from "@/lib/levels";
-import { getPlayerId, getHandle, hasHandle } from "@/lib/player";
+import { getPlayerId, getHandle, setHandle, hasHandle } from "@/lib/player";
 import HandlePicker from "./HandlePicker";
 
 interface Props {
@@ -22,23 +22,23 @@ interface LeaderboardEntry {
 
 export default function ResultModal({ level, result, onRetry }: Props) {
   const next = LEVELS.find((l) => l.id === level.id + 1);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(
-    null
-  );
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(null);
   const [leaderboardError, setLeaderboardError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showHandlePicker, setShowHandlePicker] = useState(false);
+  const [handleError, setHandleError] = useState("");
   const [playerId] = useState(() => getPlayerId());
   const [myHandle, setMyHandle] = useState("");
 
   const submitAndFetch = useCallback(
-    async (handle: string) => {
+    async (handle: string, signal: AbortSignal) => {
       setSubmitting(true);
       setMyHandle(handle);
       try {
-        await fetch("/api/scores", {
+        const postResp = await fetch("/api/scores", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal,
           body: JSON.stringify({
             levelId: level.id,
             playerId,
@@ -47,36 +47,65 @@ export default function ResultModal({ level, result, onRetry }: Props) {
             timeMs: result.timeMs,
           }),
         });
-        const res = await fetch(`/api/scores?level=${level.id}`);
+
+        if (signal.aborted) return;
+
+        if (postResp.status === 409) {
+          // Handle taken — re-open the picker with an error message.
+          setHandleError("Handle already taken — try another");
+          setShowHandlePicker(true);
+          setSubmitting(false);
+          return;
+        }
+
+        if (postResp.ok) {
+          // Server accepted: persist the handle locally now.
+          setHandle(handle);
+        }
+
+        const res = await fetch(`/api/scores?level=${level.id}`, { signal });
+        if (signal.aborted) return;
         if (!res.ok) throw new Error("fetch failed");
         setLeaderboard(await res.json());
       } catch (err) {
+        if (signal.aborted) return;
         console.error("Leaderboard error:", err);
         setLeaderboardError(true);
       } finally {
-        setSubmitting(false);
+        if (!signal.aborted) setSubmitting(false);
       }
     },
     [level.id, result.passes, result.timeMs, playerId]
   );
 
   useEffect(() => {
+    // AbortController lets us cancel in-flight fetches on cleanup, which also
+    // prevents React Strict Mode's double-invocation from leaving the component
+    // in a stale state (first mount's async work is cancelled before remount).
+    const ac = new AbortController();
+
     if (hasHandle()) {
-      submitAndFetch(getHandle());
+      submitAndFetch(getHandle(), ac.signal);
     } else {
       setShowHandlePicker(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
+    return () => ac.abort();
+  }, [submitAndFetch]);
 
   const handlePickerSubmit = (handle: string) => {
+    setHandleError("");
     setShowHandlePicker(false);
-    submitAndFetch(handle);
+    const ac = new AbortController();
+    submitAndFetch(handle, ac.signal);
+    // No cleanup needed here — the picker is a one-shot user action.
   };
 
   return (
     <>
-      {showHandlePicker && <HandlePicker onSubmit={handlePickerSubmit} />}
+      {showHandlePicker && (
+        <HandlePicker onSubmit={handlePickerSubmit} initialError={handleError} />
+      )}
 
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0f2942]/70 backdrop-blur-sm p-4 animate-fadeIn">
         <div className="bg-[#fef3e7] rounded-3xl p-5 sm:p-8 max-w-md w-full shadow-2xl border-4 border-[#0f2942] text-[#0f2942] overflow-y-auto max-h-[90vh]">
@@ -97,18 +126,14 @@ export default function ResultModal({ level, result, onRetry }: Props) {
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3 mb-6 font-mono">
             <div className="bg-[#0f2942]/5 rounded-lg p-3 text-center">
-              <p className="text-[10px] uppercase tracking-widest opacity-60">
-                Passes
-              </p>
+              <p className="text-[10px] uppercase tracking-widest opacity-60">Passes</p>
               <p className="text-2xl font-bold">
                 {result.passes}
                 <span className="text-sm opacity-50"> / par {level.par}</span>
               </p>
             </div>
             <div className="bg-[#0f2942]/5 rounded-lg p-3 text-center">
-              <p className="text-[10px] uppercase tracking-widest opacity-60">
-                Time
-              </p>
+              <p className="text-[10px] uppercase tracking-widest opacity-60">Time</p>
               <p className="text-2xl font-bold">
                 {(result.timeMs / 1000).toFixed(1)}s
               </p>
@@ -130,7 +155,7 @@ export default function ResultModal({ level, result, onRetry }: Props) {
                 Couldn&apos;t reach leaderboard
               </p>
             )}
-            {!submitting && leaderboard && leaderboard.length === 0 && (
+            {!submitting && !leaderboardError && leaderboard && leaderboard.length === 0 && (
               <p className="text-xs font-mono text-center opacity-50 py-2">
                 No scores yet
               </p>
@@ -143,14 +168,10 @@ export default function ResultModal({ level, result, onRetry }: Props) {
                     <div
                       key={entry.rank}
                       className={`flex items-center gap-2 text-xs font-mono px-2 py-1.5 rounded-lg ${
-                        isMe
-                          ? "bg-[#ea580c]/10 font-bold"
-                          : "bg-[#0f2942]/5"
+                        isMe ? "bg-[#ea580c]/10 font-bold" : "bg-[#0f2942]/5"
                       }`}
                     >
-                      <span className="opacity-50 w-4 shrink-0 text-right">
-                        {entry.rank}.
-                      </span>
+                      <span className="opacity-50 w-4 shrink-0 text-right">{entry.rank}.</span>
                       <span className="flex-1 truncate">{entry.handle}</span>
                       <span className="shrink-0">{entry.passes}p</span>
                       <span className="opacity-50 shrink-0">

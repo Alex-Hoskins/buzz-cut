@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { setHandle } from "@/lib/player";
 
 const HANDLE_RE = /^[a-zA-Z0-9_-]{3,12}$/;
 
 interface Props {
   onSubmit: (handle: string) => void;
+  initialError?: string;
 }
 
-export default function HandlePicker({ onSubmit }: Props) {
+export default function HandlePicker({ onSubmit, initialError }: Props) {
   const [value, setValue] = useState("");
-  const [error, setError] = useState("");
+  // initialError comes from a 409 response — shown when the picker re-opens
+  const [error, setError] = useState(initialError ?? "");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +20,7 @@ export default function HandlePicker({ onSubmit }: Props) {
       setError("3–12 characters: letters, numbers, _ or -");
       return;
     }
-    setHandle(value);
+    // Don't persist locally here — ResultModal saves it only after the server accepts it.
     onSubmit(value);
   };
 

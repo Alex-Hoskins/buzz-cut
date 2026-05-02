@@ -3,22 +3,34 @@ const HANDLE_KEY = "buzzcut.handle";
 
 export function getPlayerId(): string {
   if (typeof window === "undefined") return "";
-  let id = localStorage.getItem(PLAYER_ID_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(PLAYER_ID_KEY, id);
+  try {
+    let id = localStorage.getItem(PLAYER_ID_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(PLAYER_ID_KEY, id);
+    }
+    return id;
+  } catch {
+    return crypto.randomUUID();
   }
-  return id;
 }
 
 export function getHandle(): string {
   if (typeof window === "undefined") return "";
-  return localStorage.getItem(HANDLE_KEY) ?? "";
+  try {
+    return localStorage.getItem(HANDLE_KEY) ?? "";
+  } catch {
+    return "";
+  }
 }
 
 export function setHandle(name: string): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(HANDLE_KEY, name);
+  try {
+    localStorage.setItem(HANDLE_KEY, name);
+  } catch {
+    // silent fail — player can still play, handle just won't persist
+  }
 }
 
 export function hasHandle(): boolean {
