@@ -5,11 +5,36 @@ import { useEffect, useState } from "react";
 import { LEVELS } from "@/lib/levels";
 import { loadScores, type Scores } from "@/lib/storage";
 
+interface LeaderboardEntry {
+  handle: string;
+  passes: number;
+  timeMs: number;
+  rank: number;
+}
+
 export default function Home() {
   const [scores, setScores] = useState<Scores>({});
+  const [topCuts, setTopCuts] = useState<Record<number, LeaderboardEntry[]>>(
+    {}
+  );
+  const [topCutsLoading, setTopCutsLoading] = useState(true);
 
   useEffect(() => {
     setScores(loadScores());
+  }, []);
+
+  useEffect(() => {
+    Promise.all(
+      LEVELS.map((l) =>
+        fetch(`/api/scores?level=${l.id}`)
+          .then((r) => r.json())
+          .then((data: LeaderboardEntry[]) => [l.id, data.slice(0, 3)] as const)
+          .catch(() => [l.id, []] as const)
+      )
+    ).then((results) => {
+      setTopCuts(Object.fromEntries(results));
+      setTopCutsLoading(false);
+    });
   }, []);
 
   const totalStars = Object.values(scores).reduce((sum, s) => sum + s.stars, 0);
@@ -31,7 +56,7 @@ export default function Home() {
           </h1>
           <p className="mt-4 text-lg max-w-md mx-auto opacity-70">
             A pendulum-clipper barbershop puzzle. Time your drops. Buzz the dome.
-            Don't waste passes.
+            Don&apos;t waste passes.
           </p>
         </header>
 
@@ -85,6 +110,62 @@ export default function Home() {
             );
           })}
         </div>
+
+        {/* Top Cuts leaderboard */}
+        <section className="mt-16">
+          <h2 className="font-display text-3xl font-bold text-center mb-8">
+            Top Cuts
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {LEVELS.map((level) => (
+              <div
+                key={level.id}
+                className="bg-white border-2 border-[#0f2942] rounded-2xl p-5 shadow-[4px_4px_0_#0f2942]"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="font-mono text-xs opacity-50 tracking-widest">
+                    LEVEL {String(level.id).padStart(2, "0")}
+                  </span>
+                  <span className="font-display font-bold text-sm truncate max-w-[140px]">
+                    {level.name}
+                  </span>
+                </div>
+                {topCutsLoading ? (
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="h-6 bg-[#0f2942]/5 rounded animate-pulse"
+                      />
+                    ))}
+                  </div>
+                ) : topCuts[level.id]?.length ? (
+                  <div className="space-y-1">
+                    {topCuts[level.id].map((entry) => (
+                      <div
+                        key={entry.rank}
+                        className="flex items-center gap-2 text-xs font-mono"
+                      >
+                        <span className="opacity-50 w-4 shrink-0 text-right">
+                          {entry.rank}.
+                        </span>
+                        <span className="flex-1 truncate">{entry.handle}</span>
+                        <span className="shrink-0">{entry.passes}p</span>
+                        <span className="opacity-40 shrink-0">
+                          {(entry.timeMs / 1000).toFixed(1)}s
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs font-mono opacity-40 text-center py-3">
+                    No cuts yet
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
 
         {/* Footer */}
         <footer className="mt-16 text-center text-xs font-mono opacity-40 tracking-widest uppercase">
