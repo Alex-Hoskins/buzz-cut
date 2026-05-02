@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import type { Level } from "@/lib/levels";
 import { calcStars } from "@/lib/levels";
 import { saveScore } from "@/lib/storage";
@@ -8,6 +8,8 @@ import { buildGeometry } from "@/lib/geometry";
 
 const CANVAS_W = 700;
 const CANVAS_H = 520;
+// Approximate height of nav + page padding + HUD + coverage bar + hint + gaps
+const VIEWPORT_OVERHEAD = 200;
 const CLIPPER_RADIUS = 22;       // half of clipper width (44px wide stripe)
 const CLIPPER_DROP_SPEED = 720;  // px/s descent
 const CLIPPER_RETRACT_SPEED = 900;
@@ -28,6 +30,8 @@ export default function Game({ level, onFinish }: GameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const maskCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [displayScale, setDisplayScale] = useState(1);
   const stateRef = useRef({
     clipper: {
       x: CANVAS_W / 2,
@@ -57,17 +61,34 @@ export default function Game({ level, onFinish }: GameProps) {
     }
   }, []);
 
+  // Compute display scale to fit canvas within the viewport on any screen size.
+  useLayoutEffect(() => {
+    const update = () => {
+      if (!wrapperRef.current) return;
+      const availW = wrapperRef.current.clientWidth;
+      const availH = window.innerHeight - VIEWPORT_OVERHEAD;
+      setDisplayScale(Math.min(1, availW / CANVAS_W, Math.max(0.2, availH / CANVAS_H)));
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    if (wrapperRef.current) ro.observe(wrapperRef.current);
+    window.addEventListener("resize", update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
   // Set up canvases and mask once per level mount.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Hi-DPI scaling
+    // Hi-DPI scaling — internal resolution stays at CANVAS_W×CANVAS_H * dpr;
+    // display size is controlled via CSS (the `style` prop on the canvas element).
     const dpr = window.devicePixelRatio || 1;
     canvas.width = CANVAS_W * dpr;
     canvas.height = CANVAS_H * dpr;
-    canvas.style.width = `${CANVAS_W}px`;
-    canvas.style.height = `${CANVAS_H}px`;
     const ctx = canvas.getContext("2d")!;
     ctx.scale(dpr, dpr);
 
@@ -260,17 +281,26 @@ export default function Game({ level, onFinish }: GameProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [dropClippers]);
 
+  const dW = Math.floor(CANVAS_W * displayScale);
+  const dH = Math.floor(CANVAS_H * displayScale);
+
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div ref={wrapperRef} className="w-full flex flex-col items-center gap-3">
       {/* HUD */}
-      <div className="w-[700px] max-w-full grid grid-cols-3 gap-2 text-[#0f2942] font-mono text-sm">
+      <div
+        style={{ width: dW }}
+        className="grid grid-cols-3 gap-2 text-[#0f2942] font-mono text-sm"
+      >
         <Stat label="PASSES" value={`${passes} / ${level.par}`} />
         <Stat label="COVERAGE" value={`${Math.round(coverage * 100)}%`} />
         <Stat label="TIME" value={`${(elapsed / 1000).toFixed(1)}s`} />
       </div>
 
       {/* Coverage bar */}
-      <div className="w-[700px] max-w-full h-2 bg-[#0f2942]/10 rounded-full overflow-hidden">
+      <div
+        style={{ width: dW }}
+        className="h-2 bg-[#0f2942]/10 rounded-full overflow-hidden"
+      >
         <div
           className="h-full bg-[#ea580c] transition-[width] duration-100 ease-linear"
           style={{ width: `${Math.round(coverage * 100)}%` }}
@@ -285,11 +315,11 @@ export default function Game({ level, onFinish }: GameProps) {
           dropClippers();
         }}
         className="rounded-2xl shadow-2xl cursor-pointer touch-none select-none border-4 border-[#0f2942]"
-        style={{ background: "#fef3e7" }}
+        style={{ width: dW, height: dH, background: "#fef3e7" }}
       />
 
       <p className="text-xs text-[#0f2942]/60 font-mono uppercase tracking-widest">
-        Click / Tap / Space to drop
+        Tap / Space to drop
       </p>
     </div>
   );

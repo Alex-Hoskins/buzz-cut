@@ -26,11 +26,11 @@ export default function PlayPage({
   }
 
   return (
-    <main className="min-h-screen flex flex-col">
+    <main className="h-dvh overflow-hidden flex flex-col">
       <div className="absolute top-0 left-0 right-0 h-2 barber-stripes" />
 
       {/* Top nav */}
-      <nav className="px-6 py-4 flex items-center justify-between mt-2">
+      <nav className="px-4 py-3 flex items-center justify-between mt-2 shrink-0">
         <Link
           href="/"
           className="font-mono text-xs uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity"
@@ -53,7 +53,7 @@ export default function PlayPage({
         </button>
       </nav>
 
-      <div className="flex-1 flex items-center justify-center p-4">
+      <div className="flex-1 min-h-0 flex items-center justify-center p-2 sm:p-4">
         <Game
           key={gameKey}
           level={level}
