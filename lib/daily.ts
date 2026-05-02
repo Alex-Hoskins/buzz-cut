@@ -1,7 +1,10 @@
 // Deterministic daily challenge generator.
-// Pure/isomorphic — no Path2D, no browser APIs — safe to call server-side.
+// Requires browser APIs (Path2D via composeHead, canvas via countHairPixels).
+// Always called inside useEffect on client components.
 
-import type { HeadConfig, SkullShape, HairTop, HairSides, HairBeard } from "./head-system";
+import type { HeadConfig, SkullShape, HairTop, HairSides, HairBeard, HeadGeometry } from "./head-system";
+import { composeHead } from "./head-system";
+import { countHairPixels } from "./coverage";
 import { getHolidayForDate, type HolidayConfig } from "./holidays";
 
 export interface DailyConfig {
@@ -86,27 +89,23 @@ const HAIR_COLOR_PALETTE = [
 // Sun=220, Mon=180, Tue=230, Wed=260, Thu=290, Fri=340, Sat=300
 const SWING_BY_DOW = [220, 180, 230, 260, 290, 340, 300];
 
-// ─── Par estimation (no Path2D) ───────────────────────────────────────────────
+// ─── Par computation ──────────────────────────────────────────────────────────
 
-const SKULL_RX: Record<SkullShape, number> = {
-  round: 150, oval: 140, tall: 130, narrow: 115, wide: 175, egg: 125,
-};
+const CLIPPER_STRIPE_WIDTH = 44; // matches CLIPPER_RADIUS * 2 in Game.tsx
 
-function estimateHairWidth(config: HeadConfig): number {
-  const rx = SKULL_RX[config.skull];
-  if (config.hairTop === "mohawk") return 76; // 60px strip + 2×8 bounds padding
-  if (config.hairTop === "bald" || config.hairTop === "short-cap") {
-    if (config.hairSides !== "none") return rx * 2;
-    if (config.hairBeard !== "none" && config.hairBeard !== "stubble") return rx * 2 - 16;
-    return 0;
-  }
-  return rx * 2;
-}
+function computePar(geometry: HeadGeometry, totalHairPixels: number): number {
+  // Constraint 1: geometric minimum — stripes needed to span the hair width
+  const geometricMin = Math.ceil(geometry.bounds.w / CLIPPER_STRIPE_WIDTH);
 
-export function estimatePar(config: HeadConfig): number {
-  const w = estimateHairWidth(config);
-  if (w === 0) return 3;
-  return Math.min(12, Math.max(3, Math.ceil(w / 44) + 1));
+  // Constraint 2: density-based — actual hair area vs expected coverage per pass
+  const stripeArea = CLIPPER_STRIPE_WIDTH * geometry.bounds.h;
+  const PER_PASS_EFFICIENCY = 0.85;
+  const densityBased = Math.ceil(totalHairPixels / (stripeArea * PER_PASS_EFFICIENCY));
+
+  const SLACK = 1;
+  const par = Math.max(geometricMin, densityBased) + SLACK;
+
+  return Math.max(3, Math.min(12, par));
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
@@ -148,7 +147,9 @@ export function generateDaily(dateString: string): DailyConfig {
 
   const dow = new Date(dateString + "T12:00:00").getDay();
   const swingSpeed = SWING_BY_DOW[dow];
-  const par = estimatePar(headConfig);
+  const geometry = composeHead(headConfig);
+  const totalHairPixels = countHairPixels(geometry);
+  const par = computePar(geometry, totalHairPixels);
   const customerLabel = holiday
     ? `Today's Customer: ${holiday.emoji} ${holiday.shortLabel}`
     : "Today's Customer";

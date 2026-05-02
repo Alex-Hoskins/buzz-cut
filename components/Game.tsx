@@ -6,6 +6,7 @@ import { calcStars } from "@/lib/levels";
 import { saveScore } from "@/lib/storage";
 import { composeHead } from "@/lib/head-system";
 import { type PassQuality, CLEAN_THRESHOLD, PARTIAL_THRESHOLD } from "@/lib/share";
+import { countHairPixels } from "@/lib/coverage";
 
 const CANVAS_W = 700;
 const CANVAS_H = 520;
@@ -112,8 +113,9 @@ export default function Game({ level, onFinish }: GameProps) {
     mctx.fill(geom.hairPath);
     mctx.restore();
 
-    // Compute total hair pixels by sampling (single bulk getImageData read).
-    stateRef.current.totalHairPixels = countOpaquePixels(mctx, geom.bounds);
+    // Compute total hair pixels — same function used by generateDaily() for par,
+    // ensuring both agree on the initial count.
+    stateRef.current.totalHairPixels = countHairPixels(geom);
 
     // Reset state
     stateRef.current.clipper = {
