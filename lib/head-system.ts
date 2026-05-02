@@ -8,10 +8,10 @@ const CANVAS_H = 520;
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
-export type SkullShape = "round" | "oval" | "tall" | "narrow";
-export type HairTop    = "bald" | "short-cap" | "full-top" | "fluffy" | "mohawk";
-export type HairSides  = "none" | "sideburns" | "mutton-chops";
-export type HairBeard  = "none" | "stubble" | "goatee" | "full";
+export type SkullShape = "round" | "oval" | "tall" | "narrow" | "wide" | "egg";
+export type HairTop    = "bald" | "short-cap" | "full-top" | "fluffy" | "mohawk" | "comb-over" | "receding" | "spiky" | "man-bun";
+export type HairSides  = "none" | "sideburns" | "mutton-chops" | "chin-strap" | "ear-tufts";
+export type HairBeard  = "none" | "stubble" | "goatee" | "full" | "chinstrap-beard" | "soul-patch";
 
 export interface HeadConfig {
   skull: SkullShape;
@@ -114,6 +114,35 @@ function buildSkull(shape: SkullShape): SkullMeta {
         sideburnTop: 250, sideburnBottom: 320,
         muttonTop: 225, muttonHeight: 110,
       };
+    case "wide":
+      // Broad jovial head — wider than tall
+      return {
+        cx: CX, cy: 300, rx: 175, ry: 155,
+        headPath: ellipsePath(CX, 300, 175, 155),
+        neckY: 447, earCy: 308, faceCy: 325,
+        sideburnTop: 245, sideburnBottom: 315,
+        muttonTop: 225, muttonHeight: 110,
+      };
+    case "egg": {
+      // Narrower at the bottom, like an egg balanced point-down.
+      // Top half: wide bezier arc (same as a ~125×180 ellipse).
+      // Bottom half: taper via bezier. Control points must be at cy+207 so the
+      // curve midpoint (t=0.5) actually reaches y = cy+155 ≈ neckY (450).
+      // Formula: y_mid = 0.25*cy + 0.75*cp_y  →  cp_y = (450-0.25*295)/0.75 ≈ 502.
+      const egCy = 295;
+      const p = new Path2D();
+      p.moveTo(CX - 125, egCy);
+      p.bezierCurveTo(CX - 125, egCy - 180, CX + 125, egCy - 180, CX + 125, egCy);
+      p.bezierCurveTo(CX + 80,  egCy + 207,  CX - 80,  egCy + 207,  CX - 125, egCy);
+      p.closePath();
+      return {
+        cx: CX, cy: egCy, rx: 125, ry: 180,
+        headPath: p,
+        neckY: 450, earCy: 308, faceCy: 328,
+        sideburnTop: 248, sideburnBottom: 316,
+        muttonTop: 228, muttonHeight: 105,
+      };
+    }
   }
 }
 
@@ -154,8 +183,83 @@ function buildHairTop(type: HairTop, s: SkullMeta): HairPart | null {
       p.rect(cx - stripW / 2, cy - ry - 20, stripW, ry + 30);
       return {
         path: p,
-        // 8px padding on each side so the coverage grid samples the strip reliably
         bounds: { x: cx - stripW / 2 - 8, y: cy - ry - 20, w: stripW + 16, h: ry + 30 },
+      };
+    }
+
+    case "comb-over": {
+      // Swept from right side across the top — asymmetric wedge.
+      // Path is CW (descend left side first) so it doesn't create winding holes
+      // when it overlaps with other CW sub-paths (sideburns, beard, etc.).
+      const p = new Path2D();
+      p.moveTo(cx + rx - 20, cy - ry + 20);        // upper right
+      p.bezierCurveTo(
+        cx + rx - 10, cy - 10,
+        cx - rx + 60, cy - 10,
+        cx - rx + 40, cy - 20,                     // lower left
+      );
+      p.lineTo(cx - rx + 40, cy - ry + 30);        // upper left
+      p.bezierCurveTo(
+        cx - rx + 60, cy - ry - 10,
+        cx + rx - 10, cy - ry - 10,
+        cx + rx - 20, cy - ry + 20,               // back to upper right
+      );
+      p.closePath();
+      return {
+        path: p,
+        bounds: { x: cx - rx + 30, y: cy - ry - 15, w: rx * 2 - 40, h: ry + 10 },
+      };
+    }
+
+    case "receding": {
+      // Hair on back and sides; forehead arc is bare
+      const p = new Path2D();
+      // Left side patch
+      p.rect(cx - rx + 2, cy - ry + 60, rx - 40, ry - 20);
+      // Right side patch
+      p.rect(cx + 40, cy - ry + 60, rx - 40, ry - 20);
+      // Back crown band connecting them
+      p.ellipse(cx, cy - ry + 70, rx - 15, 28, 0, 0, Math.PI * 2);
+      return {
+        path: p,
+        bounds: { x: cx - rx + 2, y: cy - ry + 40, w: rx * 2 - 4, h: ry - 10 },
+      };
+    }
+
+    case "spiky": {
+      // 6 jagged triangle peaks radiating above the skull
+      const p = new Path2D();
+      const numSpikes = 6;
+      const baseY = cy - ry + 20;
+      const tipY = cy - ry - 40;
+      const spread = rx - 20;
+      for (let i = 0; i < numSpikes; i++) {
+        const t = (i / (numSpikes - 1)) * 2 - 1;          // −1 to +1 across the top
+        const baseCx = cx + t * spread;
+        const halfBase = 14;
+        p.moveTo(baseCx - halfBase, baseY);
+        p.lineTo(baseCx, tipY - Math.abs(t) * 10);        // centre spikes tallest
+        p.lineTo(baseCx + halfBase, baseY);
+        p.closePath();
+      }
+      return {
+        path: p,
+        bounds: { x: cx - rx, y: tipY - 10, w: rx * 2, h: baseY - tipY + 10 },
+      };
+    }
+
+    case "man-bun": {
+      // Small fluffy bun circle on top + short cap sides
+      const p = new Path2D();
+      // Short cap band
+      p.ellipse(cx, cy, rx - 4, ry - 4, 0, Math.PI, 2 * Math.PI);
+      p.rect(cx - rx + 20, cy - 18, rx * 2 - 40, 18);
+      // Bun knot at the very top
+      const bunCy = cy - ry - 10;
+      p.ellipse(cx, bunCy, 26, 22, 0, 0, Math.PI * 2);
+      return {
+        path: p,
+        bounds: { x: cx - rx, y: cy - ry - 32, w: rx * 2, h: ry + 32 },
       };
     }
   }
@@ -201,6 +305,60 @@ function buildHairSides(
         bounds: { x: leftX, y: top, w: rightX + 26 - leftX, h },
       };
     }
+
+    case "chin-strap": {
+      // Thin strip following the jaw line from each sideburn to the chin.
+      // Both sub-paths must be CW so they don't punch holes where they overlap
+      // with CW sideburn rects (nonzero winding rule: CW+CCW = 0 = unfilled).
+      // Left is traced inner-edge-first (CW); right is naturally CW as-is.
+      const { cy, ry } = s;
+      const chinCy = cy + ry - 30;
+      const p = new Path2D();
+      // Left jaw strip — CW: inner edge descends first, outer edge returns upward
+      p.moveTo(cx - rx + 30, s.sideburnTop + 10);   // inner top
+      p.bezierCurveTo(
+        cx - rx + 22, chinCy - 18,
+        cx - 18, chinCy + 6,
+        cx - 6, chinCy + 14,                        // inner bottom
+      );
+      p.lineTo(cx - 14, chinCy + 14);               // outer bottom
+      p.bezierCurveTo(
+        cx - 30, chinCy + 8,
+        cx - rx + 10, chinCy - 20,
+        cx - rx + 18, s.sideburnTop + 10,            // outer top
+      );
+      p.closePath();
+      // Right jaw strip — already CW
+      p.moveTo(cx + rx - 18, s.sideburnTop + 10);
+      p.bezierCurveTo(
+        cx + rx - 10, chinCy - 20,
+        cx + 30, chinCy + 8,
+        cx + 14, chinCy + 14,
+      );
+      p.lineTo(cx + 6, chinCy + 14);
+      p.bezierCurveTo(
+        cx + 18, chinCy + 6,
+        cx + rx - 22, chinCy - 18,
+        cx + rx - 30, s.sideburnTop + 10,
+      );
+      p.closePath();
+      return {
+        path: p,
+        bounds: { x: cx - rx + 8, y: s.sideburnTop, w: rx * 2 - 16, h: chinCy + 20 - s.sideburnTop },
+      };
+    }
+
+    case "ear-tufts": {
+      // Small fluffy oval patches just above each ear
+      const earY = s.earCy - 30;
+      const p = new Path2D();
+      p.ellipse(cx - rx + 10, earY, 18, 14, -0.3, 0, Math.PI * 2);
+      p.ellipse(cx + rx - 10, earY, 18, 14, 0.3, 0, Math.PI * 2);
+      return {
+        path: p,
+        bounds: { x: cx - rx - 8, y: earY - 18, w: rx * 2 + 16, h: 36 },
+      };
+    }
   }
 }
 
@@ -217,12 +375,10 @@ function buildHairBeard(
 
     case "full": {
       const beardY = cy + 38;
-      const chinCy = cy + ry - 30; // centre of the rounded chin ellipse
+      const chinCy = cy + ry - 30;
       const chinRy = 54;
       const p = new Path2D();
-      // Full lower-face fill starting below the eyes
       p.rect(cx - rx + 8, beardY, rx * 2 - 16, ry - 46);
-      // Rounded chin cap (lower half of ellipse)
       p.ellipse(cx, chinCy, rx - 38, chinRy, 0, 0, Math.PI);
       return {
         part: {
@@ -230,6 +386,39 @@ function buildHairBeard(
           bounds: { x: cx - rx + 8, y: beardY, w: rx * 2 - 16, h: chinCy + chinRy - beardY },
         },
         connectY: beardY,
+      };
+    }
+
+    case "chinstrap-beard": {
+      // Jaw-line only — no mustache, thin strip following the chin arc
+      const chinCy = cy + ry - 30;
+      const chinRy = 50;
+      const p = new Path2D();
+      // Outer chin arc (lower half)
+      p.ellipse(cx, chinCy, rx - 32, chinRy, 0, 0, Math.PI);
+      // Inner cutout (slightly smaller) to make it a thin strip
+      p.ellipse(cx, chinCy, rx - 46, chinRy - 12, 0, Math.PI, 0);
+      const beardY = chinCy - 2;
+      return {
+        part: {
+          path: p,
+          bounds: { x: cx - rx + 30, y: beardY, w: rx * 2 - 60, h: chinRy + 4 },
+        },
+        connectY: beardY,
+      };
+    }
+
+    case "soul-patch": {
+      // Mouth smile is drawn at faceCy+32..+38; patch sits just below the lower lip
+      const patchY = s.faceCy + 52;
+      const p = new Path2D();
+      p.ellipse(cx, patchY, 12, 16, 0, 0, Math.PI * 2);
+      return {
+        part: {
+          path: p,
+          bounds: { x: cx - 14, y: patchY - 18, w: 28, h: 36 },
+        },
+        connectY: null,
       };
     }
   }
@@ -354,6 +543,17 @@ function makeDrawCape(neckY: number): (ctx: CanvasRenderingContext2D) => void {
 }
 
 // ─── Composition ──────────────────────────────────────────────────────────────
+
+export function randomHeadConfig(): HeadConfig {
+  const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+  return {
+    skull:     pick<SkullShape>(["round","oval","tall","narrow","wide","egg"]),
+    hairTop:   pick<HairTop>(["bald","short-cap","full-top","fluffy","mohawk","comb-over","receding","spiky","man-bun"]),
+    hairSides: pick<HairSides>(["none","sideburns","mutton-chops","chin-strap","ear-tufts"]),
+    hairBeard: pick<HairBeard>(["none","full","chinstrap-beard","soul-patch"]),
+    hairColor: pick(["#3b2a1e","#5b3a1a","#1a1a1a","#6b4226","#2a1810","#c4a35a","#8b4513","#4a3728"]),
+  };
+}
 
 export function composeHead(config: HeadConfig): HeadGeometry {
   const skull = buildSkull(config.skull);

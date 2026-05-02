@@ -10,6 +10,7 @@ export interface Level {
   headConfig: HeadConfig;
   swingSpeed: number; // pixels per second at max swing
   par: number;        // target number of passes for 3 stars
+  hidden?: boolean;   // omit from menus/leaderboard; still playable via direct URL
 }
 
 export const LEVELS: Level[] = [
@@ -52,6 +53,15 @@ export const LEVELS: Level[] = [
     headConfig: { skull: "round", hairTop: "full-top", hairSides: "sideburns", hairBeard: "full", hairColor: "#2a1810" },
     swingSpeed: 280,
     par: 8,
+  },
+  {
+    id: 6,
+    name: "TEST: New Variants",
+    subtitle: "Wide skull, spiky top, chin-strap, soul-patch.",
+    headConfig: { skull: "wide", hairTop: "spiky", hairSides: "chin-strap", hairBeard: "soul-patch", hairColor: "#1a1a1a" },
+    swingSpeed: 240,
+    par: 6,
+    hidden: true,
   },
 ];
 

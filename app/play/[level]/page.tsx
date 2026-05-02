@@ -5,7 +5,8 @@ import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
 import Game from "@/components/Game";
 import ResultModal from "@/components/ResultModal";
-import { getLevel } from "@/lib/levels";
+import { getLevel, type Level } from "@/lib/levels";
+import { randomHeadConfig, type HeadConfig } from "@/lib/head-system";
 
 type Result = { passes: number; timeMs: number; stars: 1 | 2 | 3 };
 
@@ -20,8 +21,16 @@ export default function PlayPage({
   const level = getLevel(levelId);
   const [result, setResult] = useState<Result | null>(null);
   const [gameKey, setGameKey] = useState(0);
+  const [overrideConfig, setOverrideConfig] = useState<HeadConfig | null>(null);
+  const activeLevel: Level = overrideConfig ? { ...level!, headConfig: overrideConfig } : level!;
   // Stable reference — prevents Game's useEffect([level, onFinish]) from re-running on result state change.
   const handleFinish = useCallback((r: Result) => setResult(r), []);
+
+  const handleRandom = useCallback(() => {
+    setOverrideConfig(randomHeadConfig());
+    setResult(null);
+    setGameKey((k) => k + 1);
+  }, []);
 
   if (!level) {
     notFound();
@@ -47,25 +56,35 @@ export default function PlayPage({
             {level.name}
           </h1>
         </div>
-        <button
-          onClick={() => setGameKey((k) => k + 1)}
-          className="font-mono text-xs uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity"
-        >
-          Restart ↻
-        </button>
+        <div className="flex items-center gap-3">
+          {levelId === 6 && (
+            <button
+              onClick={handleRandom}
+              className="font-mono text-xs uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity"
+            >
+              🎲 Random
+            </button>
+          )}
+          <button
+            onClick={() => { setResult(null); setGameKey((k) => k + 1); }}
+            className="font-mono text-xs uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity"
+          >
+            Restart ↻
+          </button>
+        </div>
       </nav>
 
       <div className="flex-1 min-h-0 flex items-center justify-center p-2 sm:p-4">
         <Game
           key={gameKey}
-          level={level}
+          level={activeLevel}
           onFinish={handleFinish}
         />
       </div>
 
       {result && (
         <ResultModal
-          level={level}
+          level={activeLevel}
           result={result}
           onRetry={() => {
             setResult(null);

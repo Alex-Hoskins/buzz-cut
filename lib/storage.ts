@@ -1,4 +1,4 @@
-// Persistent best-score storage (stars per level).
+// Persistent best-score storage (stars per level) + daily challenge results.
 
 const KEY = "buzzcut.scores.v1";
 
@@ -40,4 +40,29 @@ export function saveScore(levelId: number, record: ScoreRecord): Scores {
     }
   }
   return scores;
+}
+
+// ─── Daily challenge storage ──────────────────────────────────────────────────
+// One result per calendar day, keyed by "buzzcut.daily.YYYY-MM-DD".
+// First write wins — the game enforces one-shot before writing.
+
+const DAILY_PREFIX = "buzzcut.daily.";
+
+export function loadDailyResult(dateString: string): ScoreRecord | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DAILY_PREFIX + dateString);
+    return raw ? (JSON.parse(raw) as ScoreRecord) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveDailyResult(dateString: string, record: ScoreRecord): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(DAILY_PREFIX + dateString, JSON.stringify(record));
+  } catch {
+    // ignore — player can still play; result just won't persist
+  }
 }
