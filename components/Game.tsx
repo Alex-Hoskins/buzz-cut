@@ -108,22 +108,8 @@ export default function Game({ level, onFinish }: GameProps) {
     mctx.fill(geom.hairPath);
     mctx.restore();
 
-    // Compute total hair pixels by sampling.
-    const sampleHair = () => {
-      const { x, y, w, h } = geom.bounds;
-      const stepX = Math.max(1, Math.floor(w / COVERAGE_GRID));
-      const stepY = Math.max(1, Math.floor(h / COVERAGE_GRID));
-      let total = 0;
-      for (let py = y; py < y + h; py += stepY) {
-        for (let px = x; px < x + w; px += stepX) {
-          if (px < 0 || py < 0 || px >= CANVAS_W || py >= CANVAS_H) continue;
-          const data = mctx.getImageData(px, py, 1, 1).data;
-          if (data[3] > ALPHA_THRESHOLD) total++;
-        }
-      }
-      return total;
-    };
-    stateRef.current.totalHairPixels = sampleHair();
+    // Compute total hair pixels by sampling (single bulk getImageData read).
+    stateRef.current.totalHairPixels = countOpaquePixels(mctx, geom.bounds);
 
     // Reset state
     stateRef.current.clipper = {
@@ -180,20 +166,10 @@ export default function Game({ level, onFinish }: GameProps) {
         }
       }
 
-      // --- Periodic coverage sample (every ~50ms) ---
+      // --- Periodic coverage sample (every ~50ms, single bulk getImageData read) ---
       if (now - st.lastSampleAt > 50) {
         st.lastSampleAt = now;
-        const { x, y, w, h } = geom.bounds;
-        const stepX = Math.max(1, Math.floor(w / COVERAGE_GRID));
-        const stepY = Math.max(1, Math.floor(h / COVERAGE_GRID));
-        let remaining = 0;
-        for (let py = y; py < y + h; py += stepY) {
-          for (let px = x; px < x + w; px += stepX) {
-            if (px < 0 || py < 0 || px >= CANVAS_W || py >= CANVAS_H) continue;
-            const data = mctx.getImageData(px, py, 1, 1).data;
-            if (data[3] > ALPHA_THRESHOLD) remaining++;
-          }
-        }
+        const remaining = countOpaquePixels(mctx, geom.bounds);
         const cov =
           st.totalHairPixels > 0
             ? 1 - remaining / st.totalHairPixels
@@ -332,6 +308,30 @@ function Stat({ label, value }: { label: string; value: string }) {
       <span className="text-base sm:text-lg font-bold tabular-nums">{value}</span>
     </div>
   );
+}
+
+// Single getImageData read over the bounding box, then sample the pixel buffer.
+// Replaces N individual getImageData(x,y,1,1) calls (one per sampled pixel) with one bulk read.
+function countOpaquePixels(
+  ctx: CanvasRenderingContext2D,
+  bounds: { x: number; y: number; w: number; h: number }
+): number {
+  const bx = Math.max(0, Math.floor(bounds.x));
+  const by = Math.max(0, Math.floor(bounds.y));
+  const bw = Math.min(CANVAS_W - bx, Math.ceil(bounds.x + bounds.w) - bx);
+  const bh = Math.min(CANVAS_H - by, Math.ceil(bounds.y + bounds.h) - by);
+  if (bw <= 0 || bh <= 0) return 0;
+
+  const { data } = ctx.getImageData(bx, by, bw, bh);
+  const stepX = Math.max(1, Math.floor(bounds.w / COVERAGE_GRID));
+  const stepY = Math.max(1, Math.floor(bounds.h / COVERAGE_GRID));
+  let count = 0;
+  for (let py = by; py < by + bh; py += stepY) {
+    for (let px = bx; px < bx + bw; px += stepX) {
+      if (data[((py - by) * bw + (px - bx)) * 4 + 3] > ALPHA_THRESHOLD) count++;
+    }
+  }
+  return count;
 }
 
 function drawClipper(

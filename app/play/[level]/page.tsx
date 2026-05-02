@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useCallback } from "react";
 import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
 import Game from "@/components/Game";
@@ -20,6 +20,8 @@ export default function PlayPage({
   const level = getLevel(levelId);
   const [result, setResult] = useState<Result | null>(null);
   const [gameKey, setGameKey] = useState(0);
+  // Stable reference — prevents Game's useEffect([level, onFinish]) from re-running on result state change.
+  const handleFinish = useCallback((r: Result) => setResult(r), []);
 
   if (!level) {
     notFound();
@@ -57,7 +59,7 @@ export default function PlayPage({
         <Game
           key={gameKey}
           level={level}
-          onFinish={(r) => setResult(r)}
+          onFinish={handleFinish}
         />
       </div>
 
