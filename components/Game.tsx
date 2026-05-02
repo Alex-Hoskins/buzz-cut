@@ -5,7 +5,7 @@ import type { Level } from "@/lib/levels";
 import { calcStars } from "@/lib/levels";
 import { saveScore } from "@/lib/storage";
 import { composeHead } from "@/lib/head-system";
-import { type PassQuality, CLEAN_THRESHOLD, PARTIAL_THRESHOLD } from "@/lib/share";
+import { type PassQuality, CLEAN_HAIR_RATIO } from "@/lib/share";
 import { countHairPixels } from "@/lib/coverage";
 
 const CANVAS_W = 700;
@@ -31,6 +31,7 @@ interface GameProps {
 export default function Game({ level, onFinish }: GameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const maskCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const maskCtxRef = useRef<CanvasRenderingContext2D | null>(null);
   const rafRef = useRef<number | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [displayScale, setDisplayScale] = useState(1);
@@ -47,7 +48,7 @@ export default function Game({ level, onFinish }: GameProps) {
     totalHairPixels: 0,
     finished: false,
     lastSampleAt: 0,
-    coverageBeforeDrop: 0,
+    hairRatio: 0,
     passQualities: [] as PassQuality[],
   });
 
@@ -59,7 +60,12 @@ export default function Game({ level, onFinish }: GameProps) {
   const dropClippers = useCallback(() => {
     const s = stateRef.current.clipper;
     if (s.mode === "swinging") {
-      stateRef.current.coverageBeforeDrop = stateRef.current.coverage;
+      // Sample the strip BEFORE carving starts — while the mask still shows
+      // the current hair state — to determine what fraction of the path is hair.
+      stateRef.current.hairRatio =
+        maskCtxRef.current
+          ? sampleStripRatio(maskCtxRef.current, s.x, SWING_Y, CANVAS_H - 40)
+          : 0;
       s.mode = "dropping";
       stateRef.current.passes += 1;
       setPasses(stateRef.current.passes);
@@ -103,6 +109,7 @@ export default function Game({ level, onFinish }: GameProps) {
     maskCanvas.height = CANVAS_H;
     maskCanvasRef.current = maskCanvas;
     const mctx = maskCanvas.getContext("2d", { willReadFrequently: true })!;
+    maskCtxRef.current = mctx;
 
     const geom = composeHead(level.headConfig);
 
@@ -129,7 +136,7 @@ export default function Game({ level, onFinish }: GameProps) {
     stateRef.current.startTime = performance.now();
     stateRef.current.finished = false;
     stateRef.current.lastSampleAt = 0;
-    stateRef.current.coverageBeforeDrop = 0;
+    stateRef.current.hairRatio = 0;
     stateRef.current.passQualities = [];
     setCoverage(0);
     setPasses(0);
@@ -171,10 +178,9 @@ export default function Game({ level, onFinish }: GameProps) {
         if (c.y <= SWING_Y) {
           c.y = SWING_Y;
           c.mode = "swinging";
-          const gained = st.coverage - st.coverageBeforeDrop;
           const quality: PassQuality =
-            gained >= CLEAN_THRESHOLD ? "clean" :
-            gained >= PARTIAL_THRESHOLD ? "partial" : "wasted";
+            st.hairRatio >= CLEAN_HAIR_RATIO ? "clean" :
+            st.hairRatio > 0 ? "partial" : "wasted";
           st.passQualities.push(quality);
         }
       }
@@ -198,10 +204,9 @@ export default function Game({ level, onFinish }: GameProps) {
           // still dropping or retracting when coverage sample fired).
           const finalQualities = [...st.passQualities];
           if (finalQualities.length < st.passes) {
-            const gained = cov - st.coverageBeforeDrop;
             const finalQuality: PassQuality =
-              gained >= CLEAN_THRESHOLD ? "clean" :
-              gained >= PARTIAL_THRESHOLD ? "partial" : "wasted";
+              st.hairRatio >= CLEAN_HAIR_RATIO ? "clean" :
+              st.hairRatio > 0 ? "partial" : "wasted";
             finalQualities.push(finalQuality);
           }
           const result = {
@@ -332,6 +337,28 @@ function Stat({ label, value }: { label: string; value: string }) {
       <span className="text-base sm:text-lg font-bold tabular-nums">{value}</span>
     </div>
   );
+}
+
+// Fraction of the vertical stripe at cx (width = clipper diameter) that is hair
+// on the mask canvas, from fromY down to toY. Sampled before any carving starts.
+function sampleStripRatio(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  fromY: number,
+  toY: number
+): number {
+  const x = Math.max(0, Math.floor(cx - CLIPPER_RADIUS));
+  const y = Math.max(0, Math.floor(fromY));
+  const w = Math.min(CANVAS_W - x, CLIPPER_RADIUS * 2);
+  const h = Math.min(CANVAS_H - y, Math.ceil(toY) - y);
+  if (w <= 0 || h <= 0) return 0;
+  const { data } = ctx.getImageData(x, y, w, h);
+  let opaque = 0;
+  const total = w * h;
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i] > ALPHA_THRESHOLD) opaque++;
+  }
+  return total > 0 ? opaque / total : 0;
 }
 
 // Single getImageData read over the bounding box, then sample the pixel buffer.
