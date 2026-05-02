@@ -294,11 +294,11 @@ function beardHead(): HeadGeometry {
     headPath,
     hairPath,
     bounds: { x: CX - rx, y: cy - ry, w: rx * 2, h: ry + 130 },
-    neckY: cy + ry + 70, // beard pushes the cape down
+    neckY: cy + ry - 8,
     drawFace: (ctx) => {
       drawEars(ctx, cy + 10, rx);
       drawFaceFeatures(ctx, cy + 20);
     },
-    drawCape: makeDrawCape(cy + ry + 70),
+    drawCape: makeDrawCape(cy + ry - 8),
   };
 }
