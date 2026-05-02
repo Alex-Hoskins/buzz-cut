@@ -5,7 +5,7 @@ import type { Level } from "@/lib/levels";
 import { calcStars } from "@/lib/levels";
 import { saveScore } from "@/lib/storage";
 import { composeHead } from "@/lib/head-system";
-import { type PassQuality, CLEAN_THRESHOLD } from "@/lib/share";
+import { type PassQuality, CLEAN_THRESHOLD, PARTIAL_THRESHOLD } from "@/lib/share";
 
 const CANVAS_W = 700;
 const CANVAS_H = 520;
@@ -170,7 +170,10 @@ export default function Game({ level, onFinish }: GameProps) {
           c.y = SWING_Y;
           c.mode = "swinging";
           const gained = st.coverage - st.coverageBeforeDrop;
-          st.passQualities.push(gained >= CLEAN_THRESHOLD ? "clean" : "wasted");
+          const quality: PassQuality =
+            gained >= CLEAN_THRESHOLD ? "clean" :
+            gained >= PARTIAL_THRESHOLD ? "partial" : "wasted";
+          st.passQualities.push(quality);
         }
       }
 
@@ -194,7 +197,10 @@ export default function Game({ level, onFinish }: GameProps) {
           const finalQualities = [...st.passQualities];
           if (finalQualities.length < st.passes) {
             const gained = cov - st.coverageBeforeDrop;
-            finalQualities.push(gained >= CLEAN_THRESHOLD ? "clean" : "wasted");
+            const finalQuality: PassQuality =
+              gained >= CLEAN_THRESHOLD ? "clean" :
+              gained >= PARTIAL_THRESHOLD ? "partial" : "wasted";
+            finalQualities.push(finalQuality);
           }
           const result = {
             passes: st.passes,
