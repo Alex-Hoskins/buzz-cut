@@ -279,17 +279,24 @@ function beardHead(): HeadGeometry {
   const cy = 270;
   const rx = 140;
   const ry = 160;
+  // Eyes drawn at cy+20 = 290. Beard starts at cy+38 = 308, giving an 18px gap.
+  const beardY = cy + 38;
+
   const headPath = ellipsePath(CX, cy, rx, ry);
   const hairPath = new Path2D();
-  // Top hair caps the head
+
+  // Top hair cap
   hairPath.ellipse(CX, cy, rx - 2, ry - 4, 0, Math.PI, 2 * Math.PI);
   // Forehead trim
   hairPath.rect(CX - rx + 30, cy - 30, rx * 2 - 60, 30);
-  // Sideburns
-  hairPath.rect(CX - rx + 4, cy - 50, 22, 60);
-  hairPath.rect(CX + rx - 26, cy - 50, 22, 60);
-  // Beard - lower jaw area extending below
-  hairPath.ellipse(CX, cy + ry - 30, rx - 20, 80, 0, 0, Math.PI);
+  // Sideburns — run down to beard level, clear of eyes at y=290
+  hairPath.rect(CX - rx + 4, cy - 50, 22, 88);   // left:  y 220→308
+  hairPath.rect(CX + rx - 26, cy - 50, 22, 88);  // right: y 220→308
+
+  // Beard — full lower-face fill starting below the eyes
+  hairPath.rect(CX - rx + 8, beardY, rx * 2 - 16, ry - 46);   // jaw+chin: x 218–482, y 308–422
+  hairPath.ellipse(CX, cy + ry - 30, rx - 38, 54, 0, 0, Math.PI); // rounded chin cap
+
   return {
     headPath,
     hairPath,
