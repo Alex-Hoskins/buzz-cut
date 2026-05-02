@@ -12,7 +12,7 @@ import { buildShareText, type PassQuality } from "@/lib/share";
 
 interface Props {
   level: Level;
-  result: { passes: number; timeMs: number; stars: 1 | 2 | 3; passQualities: PassQuality[] };
+  result: { passes: number; timeMs: number; stars: 1 | 2 | 3; par: number; passQualities: PassQuality[] };
   onRetry: () => void;
 }
 
@@ -25,7 +25,7 @@ export default function ResultModal({ level, result, onRetry }: Props) {
   const shareText = buildShareText({
     title: level.name,
     passes: result.passes,
-    par: level.par,
+    par: result.par,
     stars: result.stars,
     passQualities: result.passQualities,
   });
@@ -60,7 +60,7 @@ export default function ResultModal({ level, result, onRetry }: Props) {
               <p className="text-[10px] uppercase tracking-widest opacity-60">Passes</p>
               <p className="text-2xl font-bold">
                 {result.passes}
-                <span className="text-sm opacity-50"> / par {level.par}</span>
+                <span className="text-sm opacity-50"> / par {result.par}</span>
               </p>
             </div>
             <div className="bg-[#0f2942]/5 rounded-lg p-3 text-center">

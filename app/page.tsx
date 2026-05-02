@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { LEVELS } from "@/lib/levels";
+import { LEVELS, calcStars } from "@/lib/levels";
 import { loadScores, loadDailyResult, type Scores } from "@/lib/storage";
 import { getTodayString, generateDaily } from "@/lib/daily";
 import { getHolidayForDate, type HolidayConfig } from "@/lib/holidays";
+import { composeHead } from "@/lib/head-system";
+import { countHairPixels } from "@/lib/coverage";
+import { computePar } from "@/lib/par";
 
 interface TodayInfo {
   dateString: string;
@@ -17,11 +20,22 @@ interface TodayInfo {
 export default function Home() {
   const [scores, setScores] = useState<Scores>({});
   const [todayInfo, setTodayInfo] = useState<TodayInfo | null>(null);
+  const [levelPars, setLevelPars] = useState<Record<number, number>>({});
 
   const visibleLevels = LEVELS.filter((l) => !l.hidden);
 
   useEffect(() => {
     setScores(loadScores());
+  }, []);
+
+  useEffect(() => {
+    const pars: Record<number, number> = {};
+    for (const level of visibleLevels) {
+      const geom = composeHead(level.headConfig);
+      const hairPixels = countHairPixels(geom);
+      pars[level.id] = computePar(geom, hairPixels);
+    }
+    setLevelPars(pars);
   }, []);
 
   useEffect(() => {
@@ -99,6 +113,8 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {visibleLevels.map((level) => {
               const score = scores[level.id];
+              const par = levelPars[level.id];
+              const stars = score && par ? calcStars(score.passes, par) : null;
               return (
                 <Link
                   key={level.id}
@@ -113,7 +129,7 @@ export default function Home() {
                       {[1, 2, 3].map((i) => (
                         <span
                           key={i}
-                          className={score && i <= score.stars ? "text-[#ea580c]" : "opacity-20"}
+                          className={stars && i <= stars ? "text-[#ea580c]" : "opacity-20"}
                         >
                           ★
                         </span>
@@ -123,7 +139,7 @@ export default function Home() {
                   <h3 className="font-display text-2xl font-bold leading-tight mb-1">{level.name}</h3>
                   <p className="text-sm opacity-70 mb-4">{level.subtitle}</p>
                   <div className="flex justify-between items-center text-xs font-mono opacity-60">
-                    <span>PAR {level.par}</span>
+                    <span>{par ? `PAR ${par}` : "PAR —"}</span>
                     {score && <span>BEST: {score.passes}</span>}
                   </div>
                 </Link>

@@ -9,7 +9,6 @@ export interface Level {
   subtitle: string;
   headConfig: HeadConfig;
   swingSpeed: number; // pixels per second at max swing
-  par: number;        // target number of passes for 3 stars
   hidden?: boolean;   // omit from menus/leaderboard; still playable via direct URL
 }
 
@@ -20,7 +19,6 @@ export const LEVELS: Level[] = [
     subtitle: "Easy does it. Get a feel for the clippers.",
     headConfig: { skull: "round", hairTop: "full-top", hairSides: "sideburns", hairBeard: "none", hairColor: "#3b2a1e" },
     swingSpeed: 180,
-    par: 6,
   },
   {
     id: 2,
@@ -28,7 +26,6 @@ export const LEVELS: Level[] = [
     subtitle: "Taller dome. Same rules.",
     headConfig: { skull: "tall", hairTop: "fluffy", hairSides: "mutton-chops", hairBeard: "none", hairColor: "#5b3a1a" },
     swingSpeed: 220,
-    par: 7,
   },
   {
     id: 3,
@@ -36,7 +33,6 @@ export const LEVELS: Level[] = [
     subtitle: "Only the strip. Don't waste passes on bare scalp.",
     headConfig: { skull: "round", hairTop: "mohawk", hairSides: "none", hairBeard: "none", hairColor: "#1a1a1a" },
     swingSpeed: 240,
-    par: 4,
   },
   {
     id: 4,
@@ -44,7 +40,6 @@ export const LEVELS: Level[] = [
     subtitle: "Clippers are wired. Time your drops.",
     headConfig: { skull: "oval", hairTop: "full-top", hairSides: "sideburns", hairBeard: "none", hairColor: "#6b4226" },
     swingSpeed: 360,
-    par: 6,
   },
   {
     id: 5,
@@ -52,7 +47,6 @@ export const LEVELS: Level[] = [
     subtitle: "Head AND beard. The works.",
     headConfig: { skull: "round", hairTop: "full-top", hairSides: "sideburns", hairBeard: "full", hairColor: "#2a1810" },
     swingSpeed: 280,
-    par: 8,
   },
   {
     id: 6,
@@ -60,7 +54,6 @@ export const LEVELS: Level[] = [
     subtitle: "Wide skull, spiky top, chin-strap, soul-patch.",
     headConfig: { skull: "wide", hairTop: "spiky", hairSides: "chin-strap", hairBeard: "soul-patch", hairColor: "#1a1a1a" },
     swingSpeed: 240,
-    par: 6,
     hidden: true,
   },
 ];

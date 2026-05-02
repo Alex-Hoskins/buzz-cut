@@ -7,6 +7,7 @@ import { saveScore } from "@/lib/storage";
 import { composeHead } from "@/lib/head-system";
 import { type PassQuality, CLEAN_HAIR_RATIO } from "@/lib/share";
 import { countHairPixels } from "@/lib/coverage";
+import { computePar } from "@/lib/par";
 
 const CANVAS_W = 700;
 const CANVAS_H = 520;
@@ -25,7 +26,7 @@ type ClipperState = "swinging" | "dropping" | "retracting";
 
 interface GameProps {
   level: Level;
-  onFinish: (result: { passes: number; timeMs: number; stars: 1 | 2 | 3; passQualities: PassQuality[] }) => void;
+  onFinish: (result: { passes: number; timeMs: number; stars: 1 | 2 | 3; par: number; passQualities: PassQuality[] }) => void;
 }
 
 export default function Game({ level, onFinish }: GameProps) {
@@ -55,6 +56,7 @@ export default function Game({ level, onFinish }: GameProps) {
   const [coverage, setCoverage] = useState(0);
   const [passes, setPasses] = useState(0);
   const [elapsed, setElapsed] = useState(0);
+  const [computedPar, setComputedPar] = useState(0);
 
   // Drop the clippers (user input).
   const dropClippers = useCallback(() => {
@@ -123,6 +125,8 @@ export default function Game({ level, onFinish }: GameProps) {
     // Compute total hair pixels — same function used by generateDaily() for par,
     // ensuring both agree on the initial count.
     stateRef.current.totalHairPixels = countHairPixels(geom);
+    const par = computePar(geom, stateRef.current.totalHairPixels);
+    setComputedPar(par);
 
     // Reset state
     stateRef.current.clipper = {
@@ -199,7 +203,7 @@ export default function Game({ level, onFinish }: GameProps) {
 
         if (cov >= WIN_THRESHOLD && !st.finished) {
           st.finished = true;
-          const stars = calcStars(st.passes, level.par);
+          const stars = calcStars(st.passes, par);
           // Quality for the winning pass may not have been pushed yet (clipper
           // still dropping or retracting when coverage sample fired).
           const finalQualities = [...st.passQualities];
@@ -213,9 +217,10 @@ export default function Game({ level, onFinish }: GameProps) {
             passes: st.passes,
             timeMs: Math.round(now - st.startTime),
             stars,
+            par,
             passQualities: finalQualities,
           };
-          saveScore(level.id, result);
+          saveScore(level.id, { passes: result.passes, timeMs: result.timeMs, passQualities: result.passQualities });
           // Wait for the current frame to paint before showing the modal.
           requestAnimationFrame(() => onFinish(result));
         }
@@ -296,7 +301,7 @@ export default function Game({ level, onFinish }: GameProps) {
         style={{ width: dW }}
         className="grid grid-cols-3 gap-2 text-[#0f2942] font-mono text-sm"
       >
-        <Stat label="PASSES" value={`${passes} / ${level.par}`} />
+        <Stat label="PASSES" value={`${passes} / ${computedPar}`} />
         <Stat label="COVERAGE" value={`${Math.round(coverage * 100)}%`} />
         <Stat label="TIME" value={`${(elapsed / 1000).toFixed(1)}s`} />
       </div>

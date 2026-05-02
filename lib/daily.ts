@@ -2,9 +2,10 @@
 // Requires browser APIs (Path2D via composeHead, canvas via countHairPixels).
 // Always called inside useEffect on client components.
 
-import type { HeadConfig, SkullShape, HairTop, HairSides, HairBeard, HeadGeometry } from "./head-system";
+import type { HeadConfig, SkullShape, HairTop, HairSides, HairBeard } from "./head-system";
 import { composeHead } from "./head-system";
 import { countHairPixels } from "./coverage";
+import { computePar } from "./par";
 import { getHolidayForDate, type HolidayConfig } from "./holidays";
 
 export interface DailyConfig {
@@ -89,24 +90,7 @@ const HAIR_COLOR_PALETTE = [
 // Sun=220, Mon=180, Tue=230, Wed=260, Thu=290, Fri=340, Sat=300
 const SWING_BY_DOW = [220, 180, 230, 260, 290, 340, 300];
 
-// ─── Par computation ──────────────────────────────────────────────────────────
-
-const CLIPPER_STRIPE_WIDTH = 44; // matches CLIPPER_RADIUS * 2 in Game.tsx
-
-function computePar(geometry: HeadGeometry, totalHairPixels: number): number {
-  // Constraint 1: geometric minimum — stripes needed to span the hair width
-  const geometricMin = Math.ceil(geometry.bounds.w / CLIPPER_STRIPE_WIDTH);
-
-  // Constraint 2: density-based — actual hair area vs expected coverage per pass
-  const stripeArea = CLIPPER_STRIPE_WIDTH * geometry.bounds.h;
-  const PER_PASS_EFFICIENCY = 0.85;
-  const densityBased = Math.ceil(totalHairPixels / (stripeArea * PER_PASS_EFFICIENCY));
-
-  const SLACK = 1;
-  const par = Math.max(geometricMin, densityBased) + SLACK;
-
-  return Math.max(3, Math.min(12, par));
-}
+// computePar lives in lib/par.ts — imported above.
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 

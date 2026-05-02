@@ -1,11 +1,12 @@
-// Persistent best-score storage (stars per level) + daily challenge results.
+// Persistent best-score storage + daily challenge results.
+// ScoreRecord intentionally omits stars — stars are computed live from
+// passes + current par so they stay accurate if par changes.
 
 const KEY = "buzzcut.scores.v1";
 
 import type { PassQuality } from "./share";
 
 export interface ScoreRecord {
-  stars: 1 | 2 | 3;
   passes: number;
   timeMs: number;
   passQualities?: PassQuality[];
@@ -17,7 +18,21 @@ export function loadScores(): Scores {
   if (typeof window === "undefined") return {};
   try {
     const raw = window.localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as Scores) : {};
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<number, ScoreRecord & { stars?: unknown }>;
+    // Migration: strip the old `stars` field if present so storage stays canonical.
+    let migrated = false;
+    for (const key of Object.keys(parsed)) {
+      if ("stars" in parsed[Number(key)]) {
+        const { stars: _stars, ...rest } = parsed[Number(key)] as ScoreRecord & { stars: unknown };
+        parsed[Number(key)] = rest;
+        migrated = true;
+      }
+    }
+    if (migrated) {
+      try { window.localStorage.setItem(KEY, JSON.stringify(parsed)); } catch { /* ignore */ }
+    }
+    return parsed as Scores;
   } catch {
     return {};
   }
@@ -26,14 +41,11 @@ export function loadScores(): Scores {
 export function saveScore(levelId: number, record: ScoreRecord): Scores {
   const scores = loadScores();
   const existing = scores[levelId];
-  // Only overwrite if better: more stars, or same stars with fewer passes, or same with faster time.
+  // Fewer passes is better; tie-break on time.
   const isBetter =
     !existing ||
-    record.stars > existing.stars ||
-    (record.stars === existing.stars && record.passes < existing.passes) ||
-    (record.stars === existing.stars &&
-      record.passes === existing.passes &&
-      record.timeMs < existing.timeMs);
+    record.passes < existing.passes ||
+    (record.passes === existing.passes && record.timeMs < existing.timeMs);
   if (isBetter) {
     scores[levelId] = record;
     try {
@@ -46,8 +58,6 @@ export function saveScore(levelId: number, record: ScoreRecord): Scores {
 }
 
 // ─── Daily challenge storage ──────────────────────────────────────────────────
-// One result per calendar day, keyed by "buzzcut.daily.YYYY-MM-DD".
-// First write wins — the game enforces one-shot before writing.
 
 const DAILY_PREFIX = "buzzcut.daily.";
 
@@ -66,6 +76,6 @@ export function saveDailyResult(dateString: string, record: ScoreRecord): void {
   try {
     window.localStorage.setItem(DAILY_PREFIX + dateString, JSON.stringify(record));
   } catch {
-    // ignore — player can still play; result just won't persist
+    // ignore
   }
 }

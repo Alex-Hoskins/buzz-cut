@@ -9,7 +9,7 @@ import { getLevel, type Level } from "@/lib/levels";
 import { randomHeadConfig, type HeadConfig } from "@/lib/head-system";
 import type { PassQuality } from "@/lib/share";
 
-type Result = { passes: number; timeMs: number; stars: 1 | 2 | 3; passQualities: PassQuality[] };
+type Result = { passes: number; timeMs: number; stars: 1 | 2 | 3; par: number; passQualities: PassQuality[] };
 
 export default function PlayPage({
   params,

@@ -6,13 +6,14 @@ import Game from "@/components/Game";
 import DailyResultModal from "@/components/DailyResultModal";
 import type { Level } from "@/lib/levels";
 import { generateDaily, getTodayString, type DailyConfig } from "@/lib/daily";
-import { loadDailyResult, saveDailyResult, type ScoreRecord } from "@/lib/storage";
+import { loadDailyResult, saveDailyResult } from "@/lib/storage";
 import ShareButton from "@/components/ShareButton";
 import { buildShareText, type PassQuality } from "@/lib/share";
+import { calcStars } from "@/lib/levels";
 // Leaderboard import preserved for future re-enabling:
 // import { getHandle } from "@/lib/player";
 
-type Result = { passes: number; timeMs: number; stars: 1 | 2 | 3; passQualities: PassQuality[] };
+type Result = { passes: number; timeMs: number; stars: 1 | 2 | 3; par: number; passQualities: PassQuality[] };
 type PageState = "loading" | "playing" | "finished" | "already-played";
 
 export default function DailyPage() {
@@ -29,7 +30,13 @@ export default function DailyPage() {
 
     const existing = loadDailyResult(today);
     if (existing) {
-      setResult({ ...existing, passQualities: existing.passQualities ?? [] });
+      setResult({
+        passes: existing.passes,
+        timeMs: existing.timeMs,
+        passQualities: existing.passQualities ?? [],
+        stars: calcStars(existing.passes, cfg.par),
+        par: cfg.par,
+      });
       setPageState("already-played");
     } else {
       setPageState("playing");
@@ -40,7 +47,7 @@ export default function DailyPage() {
   // even if the player closes the tab immediately after finishing.
   const handleFinish = useCallback(
     (r: Result) => {
-      saveDailyResult(dateString, r);
+      saveDailyResult(dateString, { passes: r.passes, timeMs: r.timeMs, passQualities: r.passQualities });
       setResult(r);
       setPageState("finished");
     },
@@ -61,7 +68,6 @@ export default function DailyPage() {
     subtitle: config.customerLabel,
     headConfig: config.headConfig,
     swingSpeed: config.swingSpeed,
-    par: config.par,
   };
 
   if (pageState === "already-played" && result) {
