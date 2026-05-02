@@ -180,8 +180,8 @@ export default function Game({ level, onFinish }: GameProps) {
         }
       }
 
-      // --- Periodic coverage sample (every ~120ms) ---
-      if (now - st.lastSampleAt > 120) {
+      // --- Periodic coverage sample (every ~50ms) ---
+      if (now - st.lastSampleAt > 50) {
         st.lastSampleAt = now;
         const { x, y, w, h } = geom.bounds;
         const stepX = Math.max(1, Math.floor(w / COVERAGE_GRID));
@@ -211,8 +211,8 @@ export default function Game({ level, onFinish }: GameProps) {
             stars,
           };
           saveScore(level.id, result);
-          // Defer onFinish to next tick so the canvas paints final state first.
-          setTimeout(() => onFinish(result), 250);
+          // Wait for the current frame to paint before showing the modal.
+          requestAnimationFrame(() => onFinish(result));
         }
       }
 
