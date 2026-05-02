@@ -189,11 +189,18 @@ export default function Game({ level, onFinish }: GameProps) {
         if (cov >= WIN_THRESHOLD && !st.finished) {
           st.finished = true;
           const stars = calcStars(st.passes, level.par);
+          // Quality for the winning pass may not have been pushed yet (clipper
+          // still dropping or retracting when coverage sample fired).
+          const finalQualities = [...st.passQualities];
+          if (finalQualities.length < st.passes) {
+            const gained = cov - st.coverageBeforeDrop;
+            finalQualities.push(gained >= CLEAN_THRESHOLD ? "clean" : "wasted");
+          }
           const result = {
             passes: st.passes,
             timeMs: Math.round(now - st.startTime),
             stars,
-            passQualities: [...st.passQualities],
+            passQualities: finalQualities,
           };
           saveScore(level.id, result);
           // Wait for the current frame to paint before showing the modal.
