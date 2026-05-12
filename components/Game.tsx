@@ -220,7 +220,9 @@ export default function Game({ level, onFinish }: GameProps) {
             par,
             passQualities: finalQualities,
           };
-          saveScore(level.id, { passes: result.passes, timeMs: result.timeMs, passQualities: result.passQualities });
+          if (level.id !== 0) {
+            saveScore(level.id, { passes: result.passes, timeMs: result.timeMs, passQualities: result.passQualities });
+          }
           // Wait for the current frame to paint before showing the modal.
           requestAnimationFrame(() => onFinish(result));
         }
