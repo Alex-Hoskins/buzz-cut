@@ -24,6 +24,12 @@ export default function Home() {
   const [totalCuts, setTotalCuts] = useState<number | null>(null);
 
   const visibleLevels = LEVELS.filter((l) => !l.hidden);
+  const parsReady = visibleLevels.every((l) => levelPars[l.id] !== undefined);
+  const hasLicense = parsReady && visibleLevels.every((l) => {
+    const score = scores[l.id];
+    const par = levelPars[l.id];
+    return score && par && calcStars(score.passes, par) === 3;
+  });
 
   useEffect(() => {
     setScores(loadScores());
@@ -117,9 +123,14 @@ export default function Home() {
 
         {/* ── Practice Mode ─────────────────────────────────────────────── */}
         <section id="practice">
-          <div className="flex items-baseline gap-3 mb-6">
+          <div className="flex items-center gap-3 mb-6 flex-wrap">
             <h2 className="font-display text-3xl font-bold">Practice Mode</h2>
             <p className="text-sm opacity-50 font-mono">Classic cuts. No pressure.</p>
+            {hasLicense && (
+              <span className="inline-block rotate-[-2deg] border-2 border-[#ea580c] text-[#ea580c] font-mono text-[10px] tracking-[0.25em] uppercase px-2 py-1 rounded select-none">
+                ★ Master Barber ★
+              </span>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -159,66 +170,6 @@ export default function Home() {
             })}
           </div>
         </section>
-
-        {/* ── Master Barber License ─────────────────────────────────────── */}
-        {(() => {
-          const parsReady = visibleLevels.every((l) => levelPars[l.id] !== undefined);
-          const hasLicense = parsReady && visibleLevels.every((l) => {
-            const score = scores[l.id];
-            const par = levelPars[l.id];
-            return score && par && calcStars(score.passes, par) === 3;
-          });
-          if (!hasLicense) return null;
-          return (
-            <section className="mt-16">
-              <div className="relative rounded-3xl bg-[#0f2942] text-[#fef3e7] p-8 sm:p-12 text-center overflow-hidden border-4 border-[#0f2942] shadow-[8px_8px_0_#ea580c]">
-                {/* Corner marks */}
-                <span className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-[#ea580c]" />
-                <span className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-[#ea580c]" />
-                <span className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-[#ea580c]" />
-                <span className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-[#ea580c]" />
-
-                <p className="font-mono text-xs tracking-[0.4em] text-[#ea580c] uppercase mb-1">
-                  Certificate of Excellence
-                </p>
-                <p className="font-mono text-[10px] tracking-widest opacity-40 uppercase mb-8">
-                  Buzz Cut Barber School · Est. 2026
-                </p>
-
-                <h2 className="font-display text-5xl sm:text-7xl font-black leading-none mb-2">
-                  Master Barber
-                </h2>
-                <p className="font-mono text-sm tracking-widest text-[#ea580c] uppercase mb-8">
-                  Licensed &amp; Certified
-                </p>
-
-                <p className="text-sm opacity-60 max-w-sm mx-auto leading-relaxed mb-10">
-                  This certifies that the bearer has demonstrated exceptional skill
-                  across all disciplines of the pendulum clipper arts.
-                </p>
-
-                <div className="flex justify-center gap-4 sm:gap-8 mb-10">
-                  {visibleLevels.map((l) => (
-                    <div key={l.id} className="text-center">
-                      <div className="flex gap-0.5 text-[#ea580c] text-base justify-center">
-                        ★★★
-                      </div>
-                      <p className="font-mono text-[10px] opacity-40 mt-1 tracking-widest">
-                        {String(l.id).padStart(2, "0")}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="border-t border-[#fef3e7]/10 pt-6">
-                  <p className="font-mono text-xs opacity-30 tracking-[0.3em] uppercase">
-                    ✂ Seal of the Barber Guild ✂
-                  </p>
-                </div>
-              </div>
-            </section>
-          );
-        })()}
 
         {/* Leaderboard hidden — see commit message. Re-enable by uncommenting. */}
         {/*
