@@ -21,6 +21,7 @@ export default function Home() {
   const [scores, setScores] = useState<Scores>({});
   const [todayInfo, setTodayInfo] = useState<TodayInfo | null>(null);
   const [levelPars, setLevelPars] = useState<Record<number, number>>({});
+  const [totalCuts, setTotalCuts] = useState<number | null>(null);
 
   const visibleLevels = LEVELS.filter((l) => !l.hidden);
 
@@ -43,6 +44,13 @@ export default function Home() {
     const alreadyPlayed = loadDailyResult(dateString) !== null;
     const { par } = generateDaily(dateString);
     setTodayInfo({ dateString, holiday, alreadyPlayed, par });
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/stats")
+      .then((r) => r.json())
+      .then((d) => setTotalCuts(d.totalCuts))
+      .catch(() => {});
   }, []);
 
   return (
@@ -155,8 +163,13 @@ export default function Home() {
         </section>
         */}
 
-        <footer className="mt-16 text-center text-xs font-mono opacity-40 tracking-widest uppercase">
-          Click • Tap • Spacebar to drop the clippers
+        <footer className="mt-16 text-center font-mono tracking-widest uppercase space-y-2">
+          {totalCuts !== null && (
+            <p className="text-sm opacity-70">
+              ✂ {totalCuts.toLocaleString()} cuts served
+            </p>
+          )}
+          <p className="text-xs opacity-40">Click • Tap • Spacebar to drop the clippers</p>
         </footer>
       </div>
 

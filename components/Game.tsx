@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react
 import type { Level } from "@/lib/levels";
 import { calcStars } from "@/lib/levels";
 import { saveScore } from "@/lib/storage";
+import { getPlayerId } from "@/lib/player";
 import { composeHead } from "@/lib/head-system";
 import { type PassQuality, CLEAN_HAIR_RATIO } from "@/lib/share";
 import { countHairPixels, computeMinPasses } from "@/lib/coverage";
@@ -223,6 +224,12 @@ export default function Game({ level, onFinish }: GameProps) {
           if (level.id !== 0) {
             saveScore(level.id, { passes: result.passes, timeMs: result.timeMs, passQualities: result.passQualities });
           }
+          // Fire-and-forget global cut counter — no await, failure is silent.
+          fetch("/api/cuts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ playerId: getPlayerId() }),
+          }).catch(() => {});
           // Wait for the current frame to paint before showing the modal.
           requestAnimationFrame(() => onFinish(result));
         }
