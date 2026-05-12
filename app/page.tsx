@@ -7,7 +7,7 @@ import { loadScores, loadDailyResult, type Scores } from "@/lib/storage";
 import { getTodayString, generateDaily } from "@/lib/daily";
 import { getHolidayForDate, type HolidayConfig } from "@/lib/holidays";
 import { composeHead } from "@/lib/head-system";
-import { countHairPixels } from "@/lib/coverage";
+import { computeMinPasses } from "@/lib/coverage";
 import { computePar } from "@/lib/par";
 
 interface TodayInfo {
@@ -32,8 +32,7 @@ export default function Home() {
     const pars: Record<number, number> = {};
     for (const level of visibleLevels) {
       const geom = composeHead(level.headConfig);
-      const hairPixels = countHairPixels(geom);
-      pars[level.id] = computePar(geom, hairPixels);
+      pars[level.id] = computePar(computeMinPasses(geom));
     }
     setLevelPars(pars);
   }, []);

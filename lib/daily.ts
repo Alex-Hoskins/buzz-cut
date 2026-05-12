@@ -4,7 +4,7 @@
 
 import type { HeadConfig, SkullShape, HairTop, HairSides, HairBeard } from "./head-system";
 import { composeHead } from "./head-system";
-import { countHairPixels } from "./coverage";
+import { computeMinPasses } from "./coverage";
 import { computePar } from "./par";
 import { getHolidayForDate, type HolidayConfig } from "./holidays";
 
@@ -90,8 +90,6 @@ const HAIR_COLOR_PALETTE = [
 // Sun=220, Mon=180, Tue=230, Wed=260, Thu=290, Fri=340, Sat=300
 const SWING_BY_DOW = [220, 180, 230, 260, 290, 340, 300];
 
-// computePar lives in lib/par.ts — imported above.
-
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 export function getTodayString(): string {
@@ -132,8 +130,7 @@ export function generateDaily(dateString: string): DailyConfig {
   const dow = new Date(dateString + "T12:00:00").getDay();
   const swingSpeed = SWING_BY_DOW[dow];
   const geometry = composeHead(headConfig);
-  const totalHairPixels = countHairPixels(geometry);
-  const par = computePar(geometry, totalHairPixels);
+  const par = computePar(computeMinPasses(geometry));
   const customerLabel = holiday
     ? `Today's Customer: ${holiday.emoji} ${holiday.shortLabel}`
     : "Today's Customer";
