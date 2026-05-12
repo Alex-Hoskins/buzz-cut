@@ -45,7 +45,7 @@ export const LEVELS: Level[] = [
     id: 5,
     name: "The Full Service",
     subtitle: "Head AND beard. The works.",
-    headConfig: { skull: "round", hairTop: "full-top", hairSides: "sideburns", hairBeard: "full", hairColor: "#2a1810" },
+    headConfig: { skull: "tall", hairTop: "fluffy", hairSides: "sideburns", hairBeard: "full", hairColor: "#2a1810" },
     swingSpeed: 280,
   },
   {
