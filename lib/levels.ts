@@ -32,7 +32,7 @@ export const LEVELS: Level[] = [
     name: "The Mohawk",
     subtitle: "Only the strip. Don't waste passes on bare scalp.",
     headConfig: { skull: "round", hairTop: "mohawk", hairSides: "none", hairBeard: "none", hairColor: "#1a1a1a" },
-    swingSpeed: 240,
+    swingSpeed: 320,
   },
   {
     id: 4,
