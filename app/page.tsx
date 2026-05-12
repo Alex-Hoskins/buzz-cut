@@ -70,6 +70,11 @@ export default function Home() {
             A pendulum-clipper barbershop puzzle. Time your drops. Buzz the dome.
             Don&apos;t waste passes.
           </p>
+          {totalCuts !== null && (
+            <p className="mt-3 text-sm font-mono tracking-widest text-[#ea580c] uppercase">
+              ✂ {totalCuts.toLocaleString()} cuts served
+            </p>
+          )}
         </header>
 
         {/* ── Today's Cut ───────────────────────────────────────────────── */}
