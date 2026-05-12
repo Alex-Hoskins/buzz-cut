@@ -26,6 +26,8 @@ export interface HeadGeometry {
   headPath: Path2D;
   hairPath: Path2D;
   bounds: { x: number; y: number; w: number; h: number };
+  skullTop: number;    // topmost y of the skull ellipse (cy - ry)
+  skullBottom: number; // bottommost y of the skull ellipse (cy + ry)
   drawFace: (ctx: CanvasRenderingContext2D) => void;
   drawCape: (ctx: CanvasRenderingContext2D) => void;
   neckY: number;
@@ -577,6 +579,8 @@ export function composeHead(config: HeadConfig): HeadGeometry {
     headPath: skull.headPath,
     hairPath,
     bounds,
+    skullTop: skull.cy - skull.ry,
+    skullBottom: skull.cy + skull.ry,
     neckY: skull.neckY,
     drawFace: (ctx) => {
       drawEars(ctx, skull.earCy, skull.rx);

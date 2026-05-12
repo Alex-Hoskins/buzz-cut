@@ -10,8 +10,18 @@ export function computePar(geometry: HeadGeometry, totalHairPixels: number): num
   const stepY = Math.max(1, Math.floor(geometry.bounds.h / COVERAGE_GRID));
   const actualHairPixels = totalHairPixels * stepX * stepY;
 
-  // One ideal pass covers a 44px-wide strip across the full bounding height.
-  const stripeArea = CLIPPER_STRIPE_WIDTH * geometry.bounds.h;
+  // Some hair paths (fluffy, spiky, man-bun) extend above the skull in their
+  // bounding box. Using bounds.h overestimates the per-pass coverage because
+  // those above-skull pixels are empty — the canvas clip removes them.
+  // Clamp to the actual skull extent so stripeArea reflects real hair height.
+  const hairHeight = Math.max(
+    1,
+    Math.min(geometry.bounds.y + geometry.bounds.h, geometry.skullBottom) -
+      Math.max(geometry.bounds.y, geometry.skullTop),
+  );
+
+  // One ideal pass covers a 44px-wide strip across the skull-bounded hair height.
+  const stripeArea = CLIPPER_STRIPE_WIDTH * hairHeight;
 
   // Passes needed = total hair area ÷ area removed per skilled pass.
   // This naturally captures both hair width (sparse → few passes) and
