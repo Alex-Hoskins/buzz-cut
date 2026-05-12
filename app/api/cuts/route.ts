@@ -4,6 +4,7 @@ import { redis } from "@/lib/redis";
 export const runtime = "nodejs";
 
 const TOTAL_KEY = "total_cuts";
+const dailyKey = () => `total_cuts:${new Date().toISOString().slice(0, 10)}`;
 // Per-player rate limit: max 30 increments per hour (covers replays without
 // letting anyone meaningfully inflate the count).
 const RATE_KEY = (id: string) => `cuts_rate:${id}`;
@@ -32,6 +33,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
 
-  const total = await redis.incr(TOTAL_KEY);
+  const [total] = await Promise.all([
+    redis.incr(TOTAL_KEY),
+    redis.incr(dailyKey()),
+  ]);
   return NextResponse.json({ total });
 }
