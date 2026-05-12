@@ -56,8 +56,7 @@ function weightedPick<T>(prng: () => number, items: [T, number][]): T {
 const SKULL_POOL: SkullShape[] = ["round", "oval", "tall", "narrow", "wide", "egg"];
 
 const HAIR_TOP_WEIGHTED: [HairTop, number][] = [
-  ["short-cap",  1  ],
-  ["full-top",   3  ],
+  ["full-top",   4  ],
   ["fluffy",     2  ],
   ["comb-over",  2  ],
   ["receding",   1.5],
@@ -127,8 +126,9 @@ export function generateDaily(dateString: string): DailyConfig {
     }
   }
 
-  const dow = new Date(dateString + "T12:00:00").getDay();
-  const swingSpeed = SWING_BY_DOW[dow];
+  const parsedDow = new Date(dateString + "T12:00:00").getDay();
+  const dow = Number.isNaN(parsedDow) ? 0 : parsedDow;
+  const swingSpeed = SWING_BY_DOW[dow] ?? 240;
   const geometry = composeHead(headConfig);
   const par = computePar(computeMinPasses(geometry));
   const customerLabel = holiday

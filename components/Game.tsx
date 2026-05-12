@@ -102,7 +102,8 @@ export default function Game({ level, onFinish }: GameProps) {
     const dpr = window.devicePixelRatio || 1;
     canvas.width = CANVAS_W * dpr;
     canvas.height = CANVAS_H * dpr;
-    const ctx = canvas.getContext("2d")!;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
     ctx.scale(dpr, dpr);
 
     // Build the offscreen mask canvas (1:1 logical px, no DPR — we sample it at logical coords).
@@ -110,7 +111,8 @@ export default function Game({ level, onFinish }: GameProps) {
     maskCanvas.width = CANVAS_W;
     maskCanvas.height = CANVAS_H;
     maskCanvasRef.current = maskCanvas;
-    const mctx = maskCanvas.getContext("2d", { willReadFrequently: true })!;
+    const mctx = maskCanvas.getContext("2d", { willReadFrequently: true });
+    if (!mctx) return;
     maskCtxRef.current = mctx;
 
     const geom = composeHead(level.headConfig);

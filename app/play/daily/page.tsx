@@ -19,12 +19,10 @@ type PageState = "loading" | "playing" | "finished" | "already-played";
 export default function DailyPage() {
   const [pageState, setPageState] = useState<PageState>("loading");
   const [config, setConfig] = useState<DailyConfig | null>(null);
-  const [dateString, setDateString] = useState("");
   const [result, setResult] = useState<Result | null>(null);
 
   useEffect(() => {
     const today = getTodayString();
-    setDateString(today);
     const cfg = generateDaily(today);
     setConfig(cfg);
 
@@ -47,11 +45,11 @@ export default function DailyPage() {
   // even if the player closes the tab immediately after finishing.
   const handleFinish = useCallback(
     (r: Result) => {
-      saveDailyResult(dateString, { passes: r.passes, timeMs: r.timeMs, passQualities: r.passQualities });
+      saveDailyResult(config!.dateString, { passes: r.passes, timeMs: r.timeMs, passQualities: r.passQualities });
       setResult(r);
       setPageState("finished");
     },
-    [dateString]
+    [config]
   );
 
   if (pageState === "loading" || !config) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface Props {
   text: string;
@@ -11,6 +11,8 @@ export default function ShareButton({ text, label = "Share Result" }: Props) {
   const [toastVisible, setToastVisible] = useState(false);
   const [showFallback, setShowFallback] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   async function handleShare() {
     if (navigator.canShare?.({ text })) {
