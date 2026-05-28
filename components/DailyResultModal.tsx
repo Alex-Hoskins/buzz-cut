@@ -3,6 +3,8 @@
 import Link from "next/link";
 import type { DailyConfig } from "@/lib/daily";
 import ShareButton from "./ShareButton";
+import SponsorCard from "./SponsorCard";
+import { CURRENT_SPONSOR } from "@/lib/sponsors";
 import { buildShareText, type PassQuality } from "@/lib/share";
 // Leaderboard imports preserved for future re-enabling:
 // import { useState, useEffect, useCallback } from "react";
@@ -74,6 +76,8 @@ export default function DailyResultModal({ config, result }: Props) {
             ...leaderboard rows...
           </div>
           */}
+
+          <SponsorCard sponsor={CURRENT_SPONSOR} />
 
           <div className="flex flex-col gap-2">
             <p className="text-center text-xs font-mono opacity-50">Come back tomorrow for a new cut ✂</p>

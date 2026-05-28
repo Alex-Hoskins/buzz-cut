@@ -8,6 +8,8 @@ import type { Level } from "@/lib/levels";
 import { generateDaily, getTodayString, type DailyConfig } from "@/lib/daily";
 import { loadDailyResult, saveDailyResult } from "@/lib/storage";
 import ShareButton from "@/components/ShareButton";
+import SponsorCard, { SponsorTag } from "@/components/SponsorCard";
+import { CURRENT_SPONSOR } from "@/lib/sponsors";
 import { buildShareText, type PassQuality } from "@/lib/share";
 import { calcStars } from "@/lib/levels";
 // Leaderboard import preserved for future re-enabling:
@@ -90,6 +92,9 @@ export default function DailyPage() {
               ? `${config.holiday.emoji} ${config.holiday.shortLabel}`
               : config.dateString}
           </h1>
+          <div className="mt-1">
+            <SponsorTag sponsor={CURRENT_SPONSOR} />
+          </div>
         </div>
         <div className="w-16" />
       </nav>
@@ -158,6 +163,8 @@ function AlreadyPlayedScreen({ config, result }: { config: DailyConfig; result: 
           ...leaderboard rows...
         </div>
         */}
+
+        <SponsorCard sponsor={CURRENT_SPONSOR} />
 
         <p className="text-xs font-mono text-center opacity-50 mb-4">Come back tomorrow for a new cut ✂</p>
         <div className="flex flex-col gap-2">
